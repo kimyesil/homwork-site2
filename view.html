@@ -7,24 +7,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-.file-scroll {
-  display: flex;
-  overflow-x: auto;
-  gap: 10px;
-  padding-bottom: 10px;
-}
-.file-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-.file-scroll::-webkit-scrollbar-thumb {
-  background: #c7c7c7;
-  border-radius: 4px;
-}
-.file-item {
-  flex: 0 0 auto;
-  width: 250px;
-  border-radius: 12px;
-}
 body {
   font-family: 'Pretendard', sans-serif;
   background: #eef2ff;
@@ -62,11 +44,24 @@ h1 {
 }
 .file-box {
   margin-top: 18px;
+  overflow-x: auto;
+  white-space: nowrap;  /* 🔹 가로 스크롤 핵심 */
+  padding-bottom: 10px;
 }
-img, video {
-  width: 100%;
+.file-box::-webkit-scrollbar {
+  height: 8px;
+}
+.file-box::-webkit-scrollbar-thumb {
+  background: #c7c7c7;
+  border-radius: 4px;
+}
+.file-media {
+  display: inline-block;  /* 🔹 옆으로 나란히 */
+  width: 240px;
   border-radius: 12px;
   margin-top: 10px;
+  margin-right: 10px;
+  vertical-align: top;
 }
 .comment-section {
   margin-top: 30px;
@@ -93,6 +88,7 @@ input, textarea {
   border: 1px solid #d4d4d8;
   font-size: 14px;
   margin-top: 6px;
+  box-sizing: border-box;
 }
 textarea {
   height: 80px;
@@ -182,73 +178,64 @@ async function loadPost() {
 
   document.getElementById("postContent").textContent = data.content;
 
-  // 파일 표시 (이미지/영상 자동 분류)
-// 파일 표시 (여러 장 지원 + 예전 단일 URL도 지원)
-// 파일 표시 (여러 장 + 가로 스크롤)
-const box = document.getElementById("fileBox");
-box.innerHTML = "";
+  // 🔹 파일 표시 (여러 장 + 가로 스크롤, 예전 단일 URL도 지원)
+  const box = document.getElementById("fileBox");
+  box.innerHTML = "";
 
-if (data.file_url) {
-  let urls = [];
+  if (data.file_url) {
+    let urls = [];
 
-  // JSON 배열인지 확인
-  try {
-    const parsed = JSON.parse(data.file_url);
-    if (Array.isArray(parsed)) urls = parsed;
-    else if (typeof parsed === "string") urls = [parsed];
-  } catch {
-    urls = [data.file_url];
+    // JSON 배열인지 확인
+    try {
+      const parsed = JSON.parse(data.file_url);
+      if (Array.isArray(parsed)) urls = parsed;
+      else if (typeof parsed === "string") urls = [parsed];
+    } catch {
+      // 예전 방식: 단일 문자열
+      urls = [data.file_url];
+    }
+
+    urls.forEach((u) => {
+      const urlLower = u.toLowerCase();
+
+      // 이미지
+      if (
+        urlLower.endsWith(".jpg") ||
+        urlLower.endsWith(".jpeg") ||
+        urlLower.endsWith(".png") ||
+        urlLower.endsWith(".gif") ||
+        urlLower.endsWith(".webp")
+      ) {
+        const img = document.createElement("img");
+        img.src = u;
+        img.className = "file-media";
+        box.appendChild(img);
+      }
+      // 영상
+      else if (
+        urlLower.endsWith(".mp4") ||
+        urlLower.endsWith(".mov") ||
+        urlLower.endsWith(".avi")
+      ) {
+        const video = document.createElement("video");
+        video.src = u;
+        video.controls = true;
+        video.className = "file-media";
+        box.appendChild(video);
+      }
+      // 기타 파일링크
+      else {
+        const a = document.createElement("a");
+        a.href = u;
+        a.target = "_blank";
+        a.textContent = "첨부파일 열기";
+        a.style.display = "inline-block";
+        a.style.marginTop = "10px";
+        a.style.marginRight = "10px";
+        box.appendChild(a);
+      }
+    });
   }
-
-  // 가로 스크롤 컨테이너 생성
-  const scrollBox = document.createElement("div");
-  scrollBox.className = "file-scroll";
-
-  // 하나씩 출력
-  urls.forEach((u) => {
-    const urlLower = u.toLowerCase();
-
-    // 이미지
-    if (
-      urlLower.endsWith(".jpg") ||
-      urlLower.endsWith(".jpeg") ||
-      urlLower.endsWith(".png") ||
-      urlLower.endsWith(".gif") ||
-      urlLower.endsWith(".webp")
-    ) {
-      const img = document.createElement("img");
-      img.src = u;
-      img.className = "file-item";
-      scrollBox.appendChild(img);
-    }
-    // 영상
-    else if (
-      urlLower.endsWith(".mp4") ||
-      urlLower.endsWith(".mov") ||
-      urlLower.endsWith(".avi")
-    ) {
-      const video = document.createElement("video");
-      video.src = u;
-      video.controls = true;
-      video.className = "file-item";
-      scrollBox.appendChild(video);
-    }
-    // 기타 파일링크
-    else {
-      const a = document.createElement("a");
-      a.href = u;
-      a.target = "_blank";
-      a.textContent = "첨부파일 열기";
-      a.style.flex = "0 0 auto";
-      a.style.marginTop = "10px";
-      scrollBox.appendChild(a);
-    }
-  });
-
-  // 컨텐츠 박스에 넣기
-  box.appendChild(scrollBox);
-
-
 }
 
 // 댓글 불러오기
@@ -262,7 +249,7 @@ async function loadComments() {
   const box = document.getElementById("commentList");
   box.innerHTML = "";
 
-  data.forEach(c => {
+  (data || []).forEach(c => {
     const div = document.createElement("div");
     div.className = "comment-card";
     div.innerHTML = `
