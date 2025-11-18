@@ -5,6 +5,7 @@
   <title>평내 에듀플렉스 과제제출</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont;
@@ -52,7 +53,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 10px;
       border-radius: 10px;
@@ -81,6 +82,25 @@
       color: #6b7280;
       margin-top: 4px;
     }
+    .pagination {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .page-btn {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin: 0 3px;
+      border: 1px solid #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    .page-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
   </style>
 </head>
 <body>
@@ -95,18 +115,27 @@
   <div class="form" id="formBox">
     <input id="school" placeholder="학교/학년 (예: 에듀중2)">
     <input id="name" placeholder="이름">
+
+    <!-- 담당 매니저 선택 -->
+    <select id="manager">
+      <option value="">담당 매니저 선택</option>
+      <option value="김예실M">김예실M</option>
+      <option value="박제민M">박제민M</option>
+    </select>
+
     <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
-  <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
 
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
 
   <h2 style="margin-top:30px;">📌 제출된 과제 목록</h2>
   <div id="postList"></div>
+  <div id="pagination" class="pagination"></div>
 </div>
 
 <script>
-  const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";   // ✅ 네 프로젝트 URL
+  const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
 
   const { createClient } = supabase;
@@ -117,86 +146,96 @@
   const submitPost = document.getElementById("submitPost");
   const fileInput = document.getElementById("fileInput");
 
+  const PAGE_SIZE = 15;
+  let currentPage = 1;
+  let totalPages = 1;
+
   openFormBtn.onclick = () => {
     formBox.style.display = formBox.style.display === "flex" ? "none" : "flex";
   };
 
- // ✅ 업로드 + 글 저장 로직 (여러 장)
-submitPost.onclick = async () => {
-  const school = document.getElementById("school").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const content = document.getElementById("content").value.trim();
-  const files = Array.from(fileInput.files || []);
+  // ✅ 업로드 + 글 저장 로직 (여러 장 + 담당 매니저)
+  submitPost.onclick = async () => {
+    const school = document.getElementById("school").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const manager = document.getElementById("manager").value.trim();
+    const content = document.getElementById("content").value.trim();
+    const files = Array.from(fileInput.files || []);
 
-  if (!school || !name || !content) {
-    alert("학교/학년, 이름, 내용을 모두 입력해주세요!");
-    return;
-  }
-
-  // 여러 장 URL을 담을 배열
-  const fileUrls = [];
-
-  // 1) 파일이 있다면 전부 업로드
-  for (const file of files) {
-    const ext = file.name.split(".").pop();
-    const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-
-    console.log("[업로드 시도] path =", path, "size =", file.size);
-
-    const { data: uploadData, error: uploadError } = await db.storage
-      .from("uploads")
-      .upload(path, file);
-
-    if (uploadError) {
-      console.error("[업로드 오류]", uploadError);
-      alert("파일 업로드에 실패했습니다: " + uploadError.message);
-      return;   // 하나라도 실패하면 글 저장 안 함
+    if (!school || !name || !content || !manager) {
+      alert("학교/학년, 이름, 담당 매니저, 내용을 모두 입력해주세요!");
+      return;
     }
 
-    const { data: publicData } = db.storage
-      .from("uploads")
-      .getPublicUrl(uploadData.path);
+    const fileUrls = [];
 
-    fileUrls.push(publicData.publicUrl);
-  }
+    // 1) 파일 여러 장 업로드
+    for (const file of files) {
+      const ext = file.name.split(".").pop();
+      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-  // 2) 글 + 파일 URL(JSON 문자열) 저장
-  //    - 파일 없으면 null
-  //    - 파일 여러 개면 ["url1","url2",...] 형태로 저장
-  const { error: insertError } = await db.from("posts").insert({
-    school,
-    name,
-    content,
-    file_url: fileUrls.length ? JSON.stringify(fileUrls) : null
-  });
+      const { data: uploadData, error: uploadError } = await db.storage
+        .from("uploads")
+        .upload(path, file);
 
-  if (insertError) {
-    console.error("[DB 저장 오류]", insertError);
-    alert("글 저장 중 오류가 발생했습니다: " + insertError.message);
-    return;
-  }
+      if (uploadError) {
+        console.error("[업로드 오류]", uploadError);
+        alert("파일 업로드에 실패했습니다: " + uploadError.message);
+        return;
+      }
 
-  alert("제출되었습니다!");
-  formBox.style.display = "none";
-  document.getElementById("school").value = "";
-  document.getElementById("name").value = "";
-  document.getElementById("content").value = "";
-  fileInput.value = "";
+      const { data: publicData } = db.storage
+        .from("uploads")
+        .getPublicUrl(uploadData.path);
 
-  await loadPosts();
-};
+      fileUrls.push(publicData.publicUrl);
+    }
 
-  // 게시글 목록 불러오기
-  async function loadPosts() {
-    const { data, error } = await db
+    // 2) 글 + 파일 URL + 담당 매니저 저장
+    const { error: insertError } = await db.from("posts").insert({
+      school,
+      name,
+      manager,
+      content,
+      file_url: fileUrls.length ? JSON.stringify(fileUrls) : null
+    });
+
+    if (insertError) {
+      console.error("[DB 저장 오류]", insertError);
+      alert("글 저장 중 오류가 발생했습니다: " + insertError.message);
+      return;
+    }
+
+    alert("제출되었습니다!");
+    formBox.style.display = "none";
+    document.getElementById("school").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("manager").value = "";
+    document.getElementById("content").value = "";
+    fileInput.value = "";
+
+    await loadPosts(1);   // 첫 페이지 새로고침
+  };
+
+  // 게시글 목록 불러오기 (페이지네이션)
+  async function loadPosts(page = 1) {
+    currentPage = page;
+
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error, count } = await db
       .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("목록 로딩 오류:", error);
       return;
     }
+
+    totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
 
     const box = document.getElementById("postList");
     box.innerHTML = "";
@@ -209,13 +248,37 @@ submitPost.onclick = async () => {
       };
       div.innerHTML = `
         <div class="post-title">${post.school} - ${post.name}</div>
-        <div class="post-meta">${new Date(post.created_at).toLocaleString()}</div>
+        <div class="post-meta">
+          ${post.manager ? post.manager + " · " : ""}${new Date(post.created_at).toLocaleString()}
+        </div>
       `;
       box.appendChild(div);
     });
+
+    renderPagination();
   }
 
-  loadPosts();
+  // 페이지 번호 렌더링
+  function renderPagination() {
+    const box = document.getElementById("pagination");
+    box.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = "page-btn" + (i === currentPage ? " active" : "");
+      btn.onclick = () => {
+        loadPosts(i);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      box.appendChild(btn);
+    }
+  }
+
+  // 초기 로딩
+  loadPosts(1);
 </script>
 </body>
 </html>

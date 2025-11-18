@@ -173,8 +173,11 @@ async function loadPost() {
     return;
   }
 
-  document.getElementById("postMeta").textContent =
-    `${data.school} · ${data.name} · ${new Date(data.created_at).toLocaleString()}`;
+ document.getElementById("postMeta").textContent =
+  `${data.school} · ${data.name}` +
+  (data.manager ? ` · 담당: ${data.manager}` : "") +
+  ` · ${new Date(data.created_at).toLocaleString()}`;
+
 
   document.getElementById("postContent").textContent = data.content;
 
