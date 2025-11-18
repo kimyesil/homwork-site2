@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>평내 에듀플렉스 과제제출</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: 'Pretendard', sans-serif;
+  background: #eef2ff;
+  margin: 0;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+}
+.container {
+  width: 100%;
+  max-width: 750px;
+  background: #fff;
+  padding: 30px 35px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+}
+h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+}
+.subtitle {
+  font-size: 14px;
+  text-align: center;
+  color: #6b7280;
+  margin-top: 5px;
+  margin-bottom: 25px;
+}
+.button-main {
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+.form {
+  margin-top: 20px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #d4d4d8;
+  font-size: 14px;
+}
+textarea {
+  height: 120px;
+  resize: none;
+}
+.post-card {
+  background: #f9fafb;
+  padding: 15px 18px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.post-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.post-meta {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>평내 에듀플렉스 과제제출</h1>
+  <p class="subtitle">과제를 제출하고 제출된 목록을 확인할 수 있어요.</p>
+
+  <!-- 과제 제출 버튼 -->
+  <button class="button-main" id="openFormBtn">과제 제출하기</button>
+
+  <!-- 글쓰기 폼 -->
+  <div class="form" id="formBox">
+    <input id="school" placeholder="학교/학년 (예: 에듀중2)">
+    <input id="name" placeholder="이름">
+    <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
+    <input type="file" id="fileInput" accept="image/*,video/*">
+
+    <button class="button-main" id="submitPost">제출하기</button>
+  </div>
+
+  <h2 style="margin-top:30px;">📌 제출된 과제 목록</h2>
+  <div id="postList"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";   
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const openFormBtn = document.getElementById("openFormBtn");
+const formBox = document.getElementById("formBox");
+const submitPost = document.getElementById("submitPost");
+
+openFormBtn.onclick = () => {
+  formBox.style.display = formBox.style.display === "flex" ? "none" : "flex";
+};
+
+submitPost.onclick = async () => {
+  const school = document.getElementById("school").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const content = document.getElementById("content").value.trim();
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!school || !name || !content) {
+    alert("모든 내용을 입력해주세요!");
+    return;
+  }
+
+  let fileUrl = null;
+
+  if (file) {
+    const fileName = Date.now() + "_" + file.name;
+    const { data, error } = await db.storage.from("uploads")
+      .upload(fileName, file);
+
+    if (!error) {
+      fileUrl = `${SUPABASE_URL}/storage/v1/object/public/uploads/${fileName}`;
+    }
+  }
+
+  const { error } = await db.from("posts").insert({
+    school, name, content, file_url: fileUrl
+  });
+
+  if (!error) {
+    alert("제출되었습니다!");
+    formBox.style.display = "none";
+    loadPosts();
+  }
+};
+
+// 게시글 목록 불러오기
+async function loadPosts() {
+  const { data } = await db
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const box = document.getElementById("postList");
+  box.innerHTML = "";
+
+  data.forEach(post => {
+    const div = document.createElement("div");
+    div.className = "post-card";
+    div.onclick = () => {
+      window.location.href = `view.html?id=${post.id}`;
+    };
+    div.innerHTML = `
+      <div class="post-title">${post.school} - ${post.name}</div>
+      <div class="post-meta">${new Date(post.created_at).toLocaleString()}</div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+loadPosts();
+</script>
+</body>
+</html>
