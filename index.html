@@ -122,65 +122,65 @@
   };
 
   submitPost.onclick = async () => {
-    const school = document.getElementById("school").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const content = document.getElementById("content").value.trim();
-    const file = fileInput.files[0] || null;
+  const school = document.getElementById("school").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const content = document.getElementById("content").value.trim();
+  const file = fileInput.files[0] || null;
 
-    if (!school || !name || !content) {
-      alert("학교/학년, 이름, 내용을 모두 입력해주세요!");
-      return;
+  if (!school || !name || !content) {
+    alert("학교/학년, 이름, 내용을 모두 입력해주세요!");
+    return;
+  }
+
+  let fileUrl = null;
+
+  // 🔹 1) 파일이 있으면 업로드 시도
+  if (file) {
+    const ext = file.name.split(".").pop();
+    const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { data: uploadData, error: uploadError } = await db.storage
+      .from("uploads")
+      .upload(path, file);
+
+    if (uploadError) {
+      console.error("업로드 오류:", uploadError);
+      alert("파일 업로드에 실패했습니다: " + uploadError.message);
+      return;   // 업로드 실패하면 글도 안 올림
     }
 
-    let fileUrl = null;
+    // ✅ Supabase가 알아서 public URL 만들어 주는 방식 (문자열 직접 조합 X)
+    const { data: publicData } = db.storage
+      .from("uploads")
+      .getPublicUrl(uploadData.path);
 
-    // 1) 파일이 있으면 Supabase Storage에 업로드
-    if (file) {
-      const ext = file.name.split(".").pop();
-      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    fileUrl = publicData.publicUrl;
+    console.log("업로드 성공, fileUrl =", fileUrl);
+  }
 
-      const { data: uploadData, error: uploadError } = await db.storage
-        .from("uploads")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: false
-        });
+  // 🔹 2) 글 + 파일 URL을 posts에 저장
+  const { error: insertError } = await db.from("posts").insert({
+    school,
+    name,
+    content,
+    file_url: fileUrl
+  });
 
-      if (uploadError) {
-        console.error("업로드 오류:", uploadError);
-        alert("파일 업로드에 실패했습니다: " + uploadError.message);
-        return;
-      }
+  if (insertError) {
+    console.error("DB 저장 오류:", insertError);
+    alert("글 저장 중 오류가 발생했습니다: " + insertError.message);
+    return;
+  }
 
-      // ✅ 여기서 path 그대로 써야 함
-      fileUrl = `${SUPABASE_URL}/storage/v1/object/public/uploads/${uploadData.path}`;
-      console.log("업로드 성공, fileUrl =", fileUrl);
-    }
+  alert("제출되었습니다!");
+  formBox.style.display = "none";
+  document.getElementById("school").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("content").value = "";
+  fileInput.value = "";
 
-    // 2) posts 테이블에 글 + 파일 URL 저장
-    const { error: insertError } = await db.from("posts").insert({
-      school,
-      name,
-      content,
-      file_url: fileUrl
-    });
-
-    if (insertError) {
-      console.error("DB 저장 오류:", insertError);
-      alert("글 저장 중 오류가 발생했습니다.");
-      return;
-    }
-
-    alert("제출되었습니다!");
-    formBox.style.display = "none";
-    document.getElementById("school").value = "";
-    document.getElementById("name").value = "";
-    document.getElementById("content").value = "";
-    fileInput.value = "";
-
-    await loadPosts();
-  };
-
+  await loadPosts();
+};
   // 게시글 목록 불러오기
   async function loadPosts() {
     const { data, error } = await db
