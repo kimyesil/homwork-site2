@@ -7,6 +7,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+.file-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.file-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.file-scroll::-webkit-scrollbar-thumb {
+  background: #c7c7c7;
+  border-radius: 4px;
+}
+.file-item {
+  flex: 0 0 auto;
+  width: 250px;
+  border-radius: 12px;
+}
 body {
   font-family: 'Pretendard', sans-serif;
   background: #eef2ff;
@@ -166,75 +184,70 @@ async function loadPost() {
 
   // 파일 표시 (이미지/영상 자동 분류)
 // 파일 표시 (여러 장 지원 + 예전 단일 URL도 지원)
+// 파일 표시 (여러 장 + 가로 스크롤)
 const box = document.getElementById("fileBox");
 box.innerHTML = "";
 
 if (data.file_url) {
   let urls = [];
 
-  // 1) 새 방식: JSON 배열 형태일 때
+  // JSON 배열인지 확인
   try {
     const parsed = JSON.parse(data.file_url);
-    if (Array.isArray(parsed)) {
-      urls = parsed;
-    } else if (typeof parsed === "string") {
-      urls = [parsed];
-    }
-  } catch (e) {
-    // 2) 예전 글: 그냥 문자열일 때
+    if (Array.isArray(parsed)) urls = parsed;
+    else if (typeof parsed === "string") urls = [parsed];
+  } catch {
     urls = [data.file_url];
   }
 
-  // 3) 각 URL별로 렌더링
+  // 가로 스크롤 컨테이너 생성
+  const scrollBox = document.createElement("div");
+  scrollBox.className = "file-scroll";
+
+  // 하나씩 출력
   urls.forEach((u) => {
     const urlLower = u.toLowerCase();
 
-    // 영상
-    if (
-      urlLower.endsWith(".mp4") ||
-      urlLower.endsWith(".mov") ||
-      urlLower.endsWith(".avi") ||
-      urlLower.includes("video")
-    ) {
-      const v = document.createElement("video");
-      v.controls = true;
-      v.src = u;
-      v.style.width = "100%";
-      v.style.borderRadius = "12px";
-      v.style.marginTop = "10px";
-      box.appendChild(v);
-    }
     // 이미지
-    else if (
+    if (
       urlLower.endsWith(".jpg") ||
       urlLower.endsWith(".jpeg") ||
       urlLower.endsWith(".png") ||
       urlLower.endsWith(".gif") ||
-      urlLower.endsWith(".webp") ||
-      urlLower.includes("image")
+      urlLower.endsWith(".webp")
     ) {
       const img = document.createElement("img");
       img.src = u;
-      img.alt = "첨부 이미지";
-      img.style.width = "100%";
-      img.style.borderRadius = "12px";
-      img.style.marginTop = "10px";
-      box.appendChild(img);
+      img.className = "file-item";
+      scrollBox.appendChild(img);
     }
-    // 기타 파일은 링크
+    // 영상
+    else if (
+      urlLower.endsWith(".mp4") ||
+      urlLower.endsWith(".mov") ||
+      urlLower.endsWith(".avi")
+    ) {
+      const video = document.createElement("video");
+      video.src = u;
+      video.controls = true;
+      video.className = "file-item";
+      scrollBox.appendChild(video);
+    }
+    // 기타 파일링크
     else {
       const a = document.createElement("a");
       a.href = u;
       a.target = "_blank";
       a.textContent = "첨부파일 열기";
-      a.style.display = "block";
+      a.style.flex = "0 0 auto";
       a.style.marginTop = "10px";
-      a.style.color = "#4f46e5";
-      a.style.fontWeight = "600";
-      box.appendChild(a);
+      scrollBox.appendChild(a);
     }
   });
-}
+
+  // 컨텐츠 박스에 넣기
+  box.appendChild(scrollBox);
+
 
 }
 
