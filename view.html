@@ -75,7 +75,6 @@ input, textarea {
   border: 1px solid #d4d4d8;
   font-size: 14px;
   margin-top: 6px;
-  box-sizing: border-box;
 }
 textarea {
   height: 80px;
@@ -92,6 +91,10 @@ textarea {
   border: none;
   cursor: pointer;
   width: 100%;
+}
+.delete-btn {
+  background: #ef4444 !important;
+  margin-top: 10px;
 }
 .back-btn {
   margin-top: 20px;
@@ -115,6 +118,9 @@ textarea {
 
   <div class="file-box" id="fileBox"></div>
 
+  <!-- 삭제 버튼 -->
+  <button class="button-main delete-btn" id="deleteBtn">글 삭제하기</button>
+
   <!-- 댓글 영역 -->
   <div class="comment-section">
     <h2 style="font-size:18px;margin-bottom:10px;">💬 댓글</h2>
@@ -137,9 +143,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// URL 파라미터에서 post id 가져오기
+// URL에서 post id
 const postId = new URLSearchParams(window.location.search).get("id");
 
+// 게시글 불러오기
 async function loadPost() {
   const { data, error } = await db
     .from("posts")
@@ -157,17 +164,23 @@ async function loadPost() {
 
   document.getElementById("postContent").textContent = data.content;
 
-  // 파일 표시
+  // 파일 표시 (이미지/영상 자동 분류)
   if (data.file_url) {
     const box = document.getElementById("fileBox");
-    if (data.file_url.endsWith(".mp4") || data.file_url.includes("video")) {
+
+    const lower = data.file_url.toLowerCase();
+
+    if (lower.endsWith(".mp4") || lower.endsWith(".mov") || lower.includes("video")) {
       box.innerHTML = `<video controls src="${data.file_url}"></video>`;
+    } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.includes("image")) {
+      box.innerHTML = `<img src="${data.file_url}" alt="첨부 이미지">`;
     } else {
-      box.innerHTML = `<img src="${data.file_url}">`;
+      box.innerHTML = `<a href="${data.file_url}" target="_blank">파일 다운로드</a>`;
     }
   }
 }
 
+// 댓글 불러오기
 async function loadComments() {
   const { data } = await db
     .from("comments")
@@ -189,7 +202,7 @@ async function loadComments() {
   });
 }
 
-// 댓글 달기
+// 댓글 작성
 document.getElementById("commentBtn").onclick = async () => {
   const name = document.getElementById("commentName").value.trim();
   const text = document.getElementById("commentText").value.trim();
@@ -209,6 +222,23 @@ document.getElementById("commentBtn").onclick = async () => {
     document.getElementById("commentName").value = "";
     document.getElementById("commentText").value = "";
     loadComments();
+  }
+};
+
+// 글 삭제하기
+document.getElementById("deleteBtn").onclick = async () => {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+
+  const { error } = await db
+    .from("posts")
+    .delete()
+    .eq("id", postId);
+
+  if (!error) {
+    alert("삭제되었습니다.");
+    window.location.href = "index.html";
+  } else {
+    alert("삭제 중 오류 발생");
   }
 };
 
