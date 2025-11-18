@@ -165,42 +165,77 @@ async function loadPost() {
   document.getElementById("postContent").textContent = data.content;
 
   // 파일 표시 (이미지/영상 자동 분류)
-if (data.file_url) {
-    const box = document.getElementById("fileBox");
-    const url = data.file_url.toLowerCase();
+// 파일 표시 (여러 장 지원 + 예전 단일 URL도 지원)
+const box = document.getElementById("fileBox");
+box.innerHTML = "";
 
-    // 영상 판단
-    if (url.endsWith(".mp4") || url.endsWith(".mov") || url.endsWith(".avi") || url.includes("video")) {
-        box.innerHTML = `
-            <video controls style="width:100%;border-radius:12px;margin-top:10px;">
-                <source src="${data.file_url}">
-                영상을 불러올 수 없습니다.
-            </video>`;
+if (data.file_url) {
+  let urls = [];
+
+  // 1) 새 방식: JSON 배열 형태일 때
+  try {
+    const parsed = JSON.parse(data.file_url);
+    if (Array.isArray(parsed)) {
+      urls = parsed;
+    } else if (typeof parsed === "string") {
+      urls = [parsed];
     }
-    // 이미지 판단
-    else if (
-        url.endsWith(".jpg") ||
-        url.endsWith(".jpeg") ||
-        url.endsWith(".png") ||
-        url.endsWith(".gif") ||
-        url.endsWith(".webp") ||
-        url.includes("image")
+  } catch (e) {
+    // 2) 예전 글: 그냥 문자열일 때
+    urls = [data.file_url];
+  }
+
+  // 3) 각 URL별로 렌더링
+  urls.forEach((u) => {
+    const urlLower = u.toLowerCase();
+
+    // 영상
+    if (
+      urlLower.endsWith(".mp4") ||
+      urlLower.endsWith(".mov") ||
+      urlLower.endsWith(".avi") ||
+      urlLower.includes("video")
     ) {
-        box.innerHTML = `
-            <img src="${data.file_url}"
-                 style="width:100%;border-radius:12px;margin-top:10px;"
-                 alt="첨부 이미지">`;
+      const v = document.createElement("video");
+      v.controls = true;
+      v.src = u;
+      v.style.width = "100%";
+      v.style.borderRadius = "12px";
+      v.style.marginTop = "10px";
+      box.appendChild(v);
     }
-    // 기타 파일은 다운로드 링크
+    // 이미지
+    else if (
+      urlLower.endsWith(".jpg") ||
+      urlLower.endsWith(".jpeg") ||
+      urlLower.endsWith(".png") ||
+      urlLower.endsWith(".gif") ||
+      urlLower.endsWith(".webp") ||
+      urlLower.includes("image")
+    ) {
+      const img = document.createElement("img");
+      img.src = u;
+      img.alt = "첨부 이미지";
+      img.style.width = "100%";
+      img.style.borderRadius = "12px";
+      img.style.marginTop = "10px";
+      box.appendChild(img);
+    }
+    // 기타 파일은 링크
     else {
-        box.innerHTML = `
-        <a href="${data.file_url}"
-           target="_blank"
-           style="display:block;margin-top:10px;color:#4f46e5;font-weight:600;">
-           첨부파일 열기
-        </a>`;
+      const a = document.createElement("a");
+      a.href = u;
+      a.target = "_blank";
+      a.textContent = "첨부파일 열기";
+      a.style.display = "block";
+      a.style.marginTop = "10px";
+      a.style.color = "#4f46e5";
+      a.style.fontWeight = "600";
+      box.appendChild(a);
     }
+  });
 }
+
 }
 
 // 댓글 불러오기
