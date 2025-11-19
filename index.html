@@ -34,8 +34,46 @@
       text-align: center;
       color: #6b7280;
       margin-top: 5px;
-      margin-bottom: 25px;
+      margin-bottom: 15px;
     }
+
+    /* 공지 박스 */
+    .notice-box {
+      background:#fff7d6;
+      border:1px solid #facc15;
+      padding:14px 16px 10px;
+      border-radius:14px;
+      margin-top:25px;
+      margin-bottom:20px;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .notice-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+    }
+    .notice-title {
+      font-size:15px;
+      font-weight:700;
+    }
+    .notice-toggle-btn {
+      border:none;
+      background:transparent;
+      font-size:12px;
+      color:#92400e;
+      cursor:pointer;
+      padding:4px 8px;
+      border-radius:8px;
+    }
+    .notice-toggle-btn:hover {
+      background:rgba(250,204,21,0.2);
+    }
+    .notice-content {
+      margin-top:4px;
+    }
+
     .button-main {
       padding: 12px 18px;
       border-radius: 10px;
@@ -46,6 +84,7 @@
       border: none;
       cursor: pointer;
       width: 100%;
+      margin-top: 15px;
     }
     .form {
       margin-top: 20px;
@@ -108,15 +147,33 @@
   <h1>평내 에듀플렉스 과제제출</h1>
   <p class="subtitle">과제를 제출하고 제출된 목록을 확인할 수 있어요.</p>
 
-  <!-- 과제 제출 버튼 -->
+  <!-- 🔥 공지 접기/열기 -->
+  <div id="noticeBox" class="notice-box">
+    <div class="notice-header">
+      <div class="notice-title">📢 공지사항</div>
+      <button id="toggleNoticeBtn" class="notice-toggle-btn">닫기 ▲</button>
+    </div>
+    <div id="noticeContent" class="notice-content">
+    <br><br>
+      이 페이지는 <b>과제 제출만을 위한 공간</b>입니다.<br>
+      서로의 학습 인증이 섞이지 않도록 <b>타인의 글 삭제 금지</b>입니다.<br><br>
+
+      예시<br>
+      ● 역사 개념 암기 완료<br>
+      ● 영어 본문 2줄 구문 분석 완료<br>
+      ● 수학 문제풀이 및 오답 정리 완료<br>
+      <b>※ 학습 교재 사진 첨부 필수</b><br><br>
+
+      <b style="color:#d97706;">개인 학습 정보 보호를 위해 업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
+    </div>
+  </div>
+
   <button class="button-main" id="openFormBtn">과제 제출하기</button>
 
-  <!-- 글쓰기 폼 -->
   <div class="form" id="formBox">
     <input id="school" placeholder="학교/학년 (예: 에듀중2)">
     <input id="name" placeholder="이름">
 
-    <!-- 담당 매니저 선택 -->
     <select id="manager">
       <option value="">담당 매니저 선택</option>
       <option value="김예실M">김예실M</option>
@@ -125,29 +182,9 @@
 
     <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
     <input type="file" id="fileInput" accept="image/*,video/*" multiple>
-
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
-<div id="noticeBox" style="
-  background:#fff7d6;
-  border:1px solid #facc15;
-  padding:18px 20px;
-  border-radius:14px;
-  margin-top:20px; 
-  margin-bottom:25px;
-  font-size:14px;
-  line-height:1.5;
-">
-  <b style="font-size:15px;">📢 공지사항</b><br><br>
-  이 페이지는 <b>과제 제출만을 위한 공간</b>으로, 모든 학생이 자유롭게 이용할 수 있습니다.<br>
-  서로의 학습 인증이 섞이지 않도록 <b>타인의 글 삭제는 절대 금지</b>입니다.<br><br>
-  아래 예시와 같이 작성해주세요.<br>
-  ● 역사 개념 암기 완료<br>
-  ● 영어 본문 2줄 구문 분석 완료<br>
-  ● 수학 문제풀이 및 오답 정리 완료<br>
-  <b>※ 학습 교재 사진 첨부는 필수입니다.</b><br><br>
-  <b style="color:#d97706;">개인 학습 정보 보호를 위해 업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
-</div>
+
   <h2 style="margin-top:30px;">📌 제출된 과제 목록</h2>
   <div id="postList"></div>
   <div id="pagination" class="pagination"></div>
@@ -160,116 +197,153 @@
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const openFormBtn = document.getElementById("openFormBtn");
-  const formBox = document.getElementById("formBox");
-  const submitPost = document.getElementById("submitPost");
-  const fileInput = document.getElementById("fileInput");
-
   const PAGE_SIZE = 15;
   let currentPage = 1;
   let totalPages = 1;
 
-  openFormBtn.onclick = () => {
-    formBox.style.display = formBox.style.display === "flex" ? "none" : "flex";
+  // 🔥 이메일 알림 기능 ON
+  const ENABLE_EMAIL = true;
+
+  // 🔥 Edge Function URL (예실 실제 URL로 넣음)
+  const FUNCTION_URL =
+    "https://kxbyfldxcrdegnfmzgrm.supabase.co/functions/v1/new-post-email";
+
+  // 공지 열기/닫기
+  const noticeContent = document.getElementById("noticeContent");
+  const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
+
+  let collapsed = localStorage.getItem("noticeCollapsed") === "1";
+
+  function updateNotice() {
+    if (collapsed) {
+      noticeContent.style.display = "none";
+      toggleNoticeBtn.textContent = "열기 ▼";
+    } else {
+      noticeContent.style.display = "block";
+      toggleNoticeBtn.textContent = "닫기 ▲";
+    }
+  }
+
+  toggleNoticeBtn.onclick = () => {
+    collapsed = !collapsed;
+    localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
+    updateNotice();
   };
 
-  // ✅ 업로드 + 글 저장 로직 (여러 장 + 담당 매니저)
-  submitPost.onclick = async () => {
+  updateNotice();
+
+  document.getElementById("openFormBtn").onclick = () => {
+    const box = document.getElementById("formBox");
+    box.style.display = box.style.display === "flex" ? "none" : "flex";
+  };
+
+  async function sendEmail(info) {
+    try {
+      await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(info)
+      });
+    } catch (e) {
+      console.log("이메일 전송 오류(무시 가능)", e);
+    }
+  }
+
+  // 제출하기
+  document.getElementById("submitPost").onclick = async () => {
     const school = document.getElementById("school").value.trim();
     const name = document.getElementById("name").value.trim();
     const manager = document.getElementById("manager").value.trim();
     const content = document.getElementById("content").value.trim();
-    const files = Array.from(fileInput.files || []);
+    const files = [...document.getElementById("fileInput").files];
 
-    if (!school || !name || !content || !manager) {
-      alert("학교/학년, 이름, 담당 매니저, 내용을 모두 입력해주세요!");
+    if (!school || !name || !manager || !content) {
+      alert("모든 내용을 입력해주세요!");
       return;
     }
 
-    const fileUrls = [];
-
-    // 1) 파일 여러 장 업로드
+    const urls = [];
     for (const file of files) {
       const ext = file.name.split(".").pop();
-      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = `homework/${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
 
-      const { data: uploadData, error: uploadError } = await db.storage
+      const { data: up, error: upErr } = await db.storage
         .from("uploads")
         .upload(path, file);
 
-      if (uploadError) {
-        console.error("[업로드 오류]", uploadError);
-        alert("파일 업로드에 실패했습니다: " + uploadError.message);
+      if (upErr) {
+        alert("파일 업로드 실패: " + upErr.message);
         return;
       }
 
-      const { data: publicData } = db.storage
+      const { data: pub } = db.storage
         .from("uploads")
-        .getPublicUrl(uploadData.path);
+        .getPublicUrl(up.path);
 
-      fileUrls.push(publicData.publicUrl);
+      urls.push(pub.publicUrl);
     }
 
-    // 2) 글 + 파일 URL + 담당 매니저 저장
-    const { error: insertError } = await db.from("posts").insert({
+    const { error } = await db.from("posts").insert({
       school,
       name,
       manager,
       content,
-      file_url: fileUrls.length ? JSON.stringify(fileUrls) : null
+      file_url: JSON.stringify(urls)
     });
 
-    if (insertError) {
-      console.error("[DB 저장 오류]", insertError);
-      alert("글 저장 중 오류가 발생했습니다: " + insertError.message);
+    if (error) {
+      alert("저장 오류: " + error.message);
       return;
     }
 
-    alert("제출되었습니다!");
-    formBox.style.display = "none";
+    // 🔥 이메일 보내기
+    if (ENABLE_EMAIL) sendEmail({ school, name, manager });
+
+    alert("제출 완료!");
+    loadPosts(1);
+
+    document.getElementById("formBox").style.display = "none";
     document.getElementById("school").value = "";
     document.getElementById("name").value = "";
     document.getElementById("manager").value = "";
     document.getElementById("content").value = "";
-    fileInput.value = "";
-
-    await loadPosts(1);   // 첫 페이지 새로고침
+    document.getElementById("fileInput").value = "";
   };
 
-  // 게시글 목록 불러오기 (페이지네이션)
   async function loadPosts(page = 1) {
     currentPage = page;
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error, count } = await db
+    const { data, count } = await db
       .from("posts")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to);
 
-    if (error) {
-      console.error("목록 로딩 오류:", error);
-      return;
-    }
-
-    totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
+    totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
     const box = document.getElementById("postList");
     box.innerHTML = "";
 
-    (data || []).forEach(post => {
+    data.forEach((p) => {
       const div = document.createElement("div");
       div.className = "post-card";
       div.onclick = () => {
-        window.location.href = `view.html?id=${post.id}`;
+        window.location.href = `view.html?id=${p.id}`;
       };
       div.innerHTML = `
-        <div class="post-title">${post.school} - ${post.name}</div>
-        <div class="post-meta">
-          ${post.manager ? post.manager + " · " : ""}${new Date(post.created_at).toLocaleString()}
-        </div>
+        <div class="post-title">${p.school} - ${p.name}</div>
+        <div class="post-meta">${p.manager} · ${new Date(
+        p.created_at
+      ).toLocaleString()}</div>
       `;
       box.appendChild(div);
     });
@@ -277,26 +351,20 @@
     renderPagination();
   }
 
-  // 페이지 번호 렌더링
   function renderPagination() {
     const box = document.getElementById("pagination");
     box.innerHTML = "";
-
-    if (totalPages <= 1) return;
 
     for (let i = 1; i <= totalPages; i++) {
       const btn = document.createElement("button");
       btn.textContent = i;
       btn.className = "page-btn" + (i === currentPage ? " active" : "");
-      btn.onclick = () => {
-        loadPosts(i);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      };
+      btn.onclick = () => loadPosts(i);
+
       box.appendChild(btn);
     }
   }
 
-  // 초기 로딩
   loadPosts(1);
 </script>
 </body>
