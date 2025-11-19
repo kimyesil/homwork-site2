@@ -7,6 +7,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+.file-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.file-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.file-scroll::-webkit-scrollbar-thumb {
+  background: #c7c7c7;
+  border-radius: 4px;
+}
+.file-item {
+  flex: 0 0 auto;
+  width: 250px;
+  border-radius: 12px;
+}
+
 body {
   font-family: 'Pretendard', sans-serif;
   background: #eef2ff;
@@ -33,6 +52,28 @@ h1 {
   color: #6b7280;
   font-size: 14px;
 }
+
+/* 🔐 비밀번호 박스 */
+.password-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: #fff3f3;
+  border-radius: 14px;
+  border: 1px solid #fecaca;
+}
+.password-box p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.password-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
 .content-box {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -44,24 +85,14 @@ h1 {
 }
 .file-box {
   margin-top: 18px;
-  overflow-x: auto;
-  white-space: nowrap;  /* 🔹 가로 스크롤 핵심 */
-  padding-bottom: 10px;
 }
-.file-box::-webkit-scrollbar {
-  height: 8px;
-}
-.file-box::-webkit-scrollbar-thumb {
-  background: #c7c7c7;
-  border-radius: 4px;
-}
-.file-media {
-  display: inline-block;  /* 🔹 옆으로 나란히 */
-  width: 240px;
+.file-scroll img,
+.file-scroll video {
+  width: 250px;
   border-radius: 12px;
   margin-top: 10px;
-  margin-right: 10px;
-  vertical-align: top;
+  flex: 0 0 auto;
+  display: block;
 }
 .comment-section {
   margin-top: 30px;
@@ -128,15 +159,25 @@ textarea {
   <h1>과제 상세보기</h1>
   <div class="meta" id="postMeta">불러오는 중...</div>
 
-  <div class="content-box" id="postContent"></div>
+  <!-- 🔐 비밀번호 입력 박스 (있으면 보이고, 없으면 자동 숨김) -->
+  <div id="passwordBox" class="password-box" style="display:none;">
+    <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.<br>
+    글 작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해주세요.</p>
+    <input id="inputPassword" class="password-input" type="password" maxlength="4"
+           placeholder="조회 비밀번호 4자리">
+    <button class="button-main" id="checkPwBtn" style="margin-top:10px;">확인</button>
+  </div>
 
-  <div class="file-box" id="fileBox"></div>
+  <!-- 처음엔 숨겼다가, 비번 맞으면 보여줌 -->
+  <div class="content-box" id="postContent" style="display:none;"></div>
+
+  <div class="file-box" id="fileBox" style="display:none;"></div>
 
   <!-- 삭제 버튼 -->
   <button class="button-main delete-btn" id="deleteBtn">글 삭제하기</button>
 
   <!-- 댓글 영역 -->
-  <div class="comment-section">
+  <div class="comment-section" id="commentSection" style="display:none;">
     <h2 style="font-size:18px;margin-bottom:10px;">💬 댓글</h2>
 
     <div id="commentList"></div>
@@ -160,6 +201,12 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // URL에서 post id
 const postId = new URLSearchParams(window.location.search).get("id");
 
+// 🔐 관리자 마스터 비번
+const MASTER_PASSWORD = "3208";
+
+// 이 글의 비밀번호 (DB에서 가져옴)
+let postPassword = "";
+
 // 게시글 불러오기
 async function loadPost() {
   const { data, error } = await db
@@ -168,40 +215,41 @@ async function loadPost() {
     .eq("id", postId)
     .single();
 
-  if (!data) {
+  if (!data || error) {
     document.getElementById("postMeta").textContent = "게시글을 찾을 수 없습니다.";
     return;
   }
 
- document.getElementById("postMeta").textContent =
-  `${data.school} · ${data.name}` +
-  (data.manager ? ` · 담당: ${data.manager}` : "") +
-  ` · ${new Date(data.created_at).toLocaleString()}`;
+  // 메타 정보
+  document.getElementById("postMeta").textContent =
+    `${data.school} · ${data.name} · ${new Date(data.created_at).toLocaleString()} · ${data.manager}`;
 
+  // 내용 / 파일 / 비밀번호 저장
+  document.getElementById("postContent").textContent = data.content || "";
 
-  document.getElementById("postContent").textContent = data.content;
+  postPassword = data.password || "";
 
-  // 🔹 파일 표시 (여러 장 + 가로 스크롤, 예전 단일 URL도 지원)
+  // 첨부파일 표시 (여러 장 + 가로 스크롤)
   const box = document.getElementById("fileBox");
   box.innerHTML = "";
 
   if (data.file_url) {
     let urls = [];
 
-    // JSON 배열인지 확인
     try {
       const parsed = JSON.parse(data.file_url);
       if (Array.isArray(parsed)) urls = parsed;
       else if (typeof parsed === "string") urls = [parsed];
     } catch {
-      // 예전 방식: 단일 문자열
       urls = [data.file_url];
     }
+
+    const scrollBox = document.createElement("div");
+    scrollBox.className = "file-scroll";
 
     urls.forEach((u) => {
       const urlLower = u.toLowerCase();
 
-      // 이미지
       if (
         urlLower.endsWith(".jpg") ||
         urlLower.endsWith(".jpeg") ||
@@ -211,11 +259,9 @@ async function loadPost() {
       ) {
         const img = document.createElement("img");
         img.src = u;
-        img.className = "file-media";
-        box.appendChild(img);
-      }
-      // 영상
-      else if (
+        img.className = "file-item";
+        scrollBox.appendChild(img);
+      } else if (
         urlLower.endsWith(".mp4") ||
         urlLower.endsWith(".mov") ||
         urlLower.endsWith(".avi")
@@ -223,23 +269,57 @@ async function loadPost() {
         const video = document.createElement("video");
         video.src = u;
         video.controls = true;
-        video.className = "file-media";
-        box.appendChild(video);
-      }
-      // 기타 파일링크
-      else {
+        video.className = "file-item";
+        scrollBox.appendChild(video);
+      } else {
         const a = document.createElement("a");
         a.href = u;
         a.target = "_blank";
         a.textContent = "첨부파일 열기";
-        a.style.display = "inline-block";
+        a.style.flex = "0 0 auto";
         a.style.marginTop = "10px";
-        a.style.marginRight = "10px";
-        box.appendChild(a);
+        scrollBox.appendChild(a);
       }
     });
+
+    box.appendChild(scrollBox);
+  }
+
+  // 🔐 비밀번호가 있는 글이면 → 비번 박스 보여주고, 내용은 잠가둠
+  if (postPassword) {
+    document.getElementById("passwordBox").style.display = "block";
+    document.getElementById("postContent").style.display = "none";
+    document.getElementById("fileBox").style.display = "none";
+    document.getElementById("commentSection").style.display = "none";
+  } else {
+    // 비밀번호 없는 과거 글이면 → 바로 보여줌
+    unlockView();
   }
 }
+
+// 🔓 잠금 해제 함수
+function unlockView() {
+  document.getElementById("passwordBox").style.display = "none";
+  document.getElementById("postContent").style.display = "block";
+  document.getElementById("fileBox").style.display = "block";
+  document.getElementById("commentSection").style.display = "block";
+}
+
+// 비밀번호 확인 버튼
+document.getElementById("checkPwBtn").onclick = () => {
+  const inputPw = document.getElementById("inputPassword").value.trim();
+
+  if (!inputPw) {
+    alert("비밀번호를 입력해주세요!");
+    return;
+  }
+
+  if (inputPw === postPassword || inputPw === MASTER_PASSWORD) {
+    unlockView();
+  } else {
+    alert("비밀번호가 틀렸습니다!");
+  }
+};
 
 // 댓글 불러오기
 async function loadComments() {
@@ -283,11 +363,34 @@ document.getElementById("commentBtn").onclick = async () => {
     document.getElementById("commentName").value = "";
     document.getElementById("commentText").value = "";
     loadComments();
+  } else {
+    alert("댓글 저장 중 오류가 발생했습니다.");
   }
 };
 
-// 글 삭제하기
+// 글 삭제하기 (비밀번호 필요)
 document.getElementById("deleteBtn").onclick = async () => {
+  const pw = prompt("삭제를 위해 비밀번호를 입력하세요 (작성 비밀번호 또는 관리자 비밀번호):");
+
+  if (!pw) {
+    alert("비밀번호를 입력해야 삭제할 수 있습니다.");
+    return;
+  }
+
+  // 글에 비밀번호가 있는 경우: 글 비번 또는 마스터 비번 허용
+  if (postPassword) {
+    if (pw !== postPassword && pw !== MASTER_PASSWORD) {
+      alert("비밀번호가 틀렸습니다!");
+      return;
+    }
+  } else {
+    // 예전 글(비번 없음)은 관리자만 삭제 가능
+    if (pw !== MASTER_PASSWORD) {
+      alert("관리자 비밀번호가 아닙니다. 삭제할 수 없습니다.");
+      return;
+    }
+  }
+
   if (!confirm("정말 삭제하시겠습니까?")) return;
 
   const { error } = await db
@@ -299,7 +402,7 @@ document.getElementById("deleteBtn").onclick = async () => {
     alert("삭제되었습니다.");
     window.location.href = "index.html";
   } else {
-    alert("삭제 중 오류 발생");
+    alert("삭제 중 오류가 발생했습니다.");
   }
 };
 

@@ -154,7 +154,7 @@
       <button id="toggleNoticeBtn" class="notice-toggle-btn">닫기 ▲</button>
     </div>
     <div id="noticeContent" class="notice-content">
-    <br>
+      <br>
       이 페이지는 <b>과제 제출만을 위한 공간</b>입니다.<br>
       서로의 학습 인증이 섞이지 않도록 <b>타인의 글 삭제 금지</b>입니다.<br><br>
 
@@ -170,6 +170,7 @@
 
   <button class="button-main" id="openFormBtn">과제 제출하기</button>
 
+  <!-- 🔥 글쓰기 폼 -->
   <div class="form" id="formBox">
     <input id="school" placeholder="학교/학년 (예: 에듀중2)">
     <input id="name" placeholder="이름">
@@ -181,7 +182,16 @@
     </select>
 
     <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
+
+    <!-- 🔐 비밀번호 추가 -->
+    <input id="postPassword"
+           type="password"
+           maxlength="4"
+           placeholder="조회 비밀번호 4자리 (예: 1234)"
+           style="margin-top:5px;">
+
     <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
 
@@ -204,7 +214,7 @@
   // 🔥 이메일 알림 기능 ON
   const ENABLE_EMAIL = true;
 
-  // 🔥 Edge Function URL (예실 실제 URL로 넣음)
+  // 🔥 Edge Function URL
   const FUNCTION_URL =
     "https://kxbyfldxcrdegnfmzgrm.supabase.co/functions/v1/new-post-email";
 
@@ -253,12 +263,13 @@
     }
   }
 
-  // 제출하기
+  // 🔥 제출하기 버튼 클릭 이벤트 (비밀번호 포함 버전, 딱 하나만!)
   document.getElementById("submitPost").onclick = async () => {
     const school = document.getElementById("school").value.trim();
     const name = document.getElementById("name").value.trim();
     const manager = document.getElementById("manager").value.trim();
     const content = document.getElementById("content").value.trim();
+    const password = document.getElementById("postPassword").value.trim();
     const files = [...document.getElementById("fileInput").files];
 
     if (!school || !name || !manager || !content) {
@@ -266,6 +277,13 @@
       return;
     }
 
+    // 🔐 비밀번호 체크
+    if (!password || password.length !== 4) {
+      alert("조회 비밀번호 4자리를 입력해주세요!");
+      return;
+    }
+
+    // 🔥 파일 업로드
     const urls = [];
     for (const file of files) {
       const ext = file.name.split(".").pop();
@@ -289,12 +307,14 @@
       urls.push(pub.publicUrl);
     }
 
+    // 🔥 DB 저장 (password 포함!)
     const { error } = await db.from("posts").insert({
       school,
       name,
       manager,
       content,
-      file_url: JSON.stringify(urls)
+      file_url: JSON.stringify(urls),
+      password
     });
 
     if (error) {
@@ -308,11 +328,13 @@
     alert("제출 완료!");
     loadPosts(1);
 
+    // 폼 초기화
     document.getElementById("formBox").style.display = "none";
     document.getElementById("school").value = "";
     document.getElementById("name").value = "";
     document.getElementById("manager").value = "";
     document.getElementById("content").value = "";
+    document.getElementById("postPassword").value = "";
     document.getElementById("fileInput").value = "";
   };
 
@@ -342,8 +364,8 @@
       div.innerHTML = `
         <div class="post-title">${p.school} - ${p.name}</div>
         <div class="post-meta">${p.manager} · ${new Date(
-        p.created_at
-      ).toLocaleString()}</div>
+          p.created_at
+        ).toLocaleString()}</div>
       `;
       box.appendChild(div);
     });
