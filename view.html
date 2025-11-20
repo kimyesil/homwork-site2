@@ -26,6 +26,7 @@
   border-radius: 12px;
 }
 
+/* 전체 레이아웃 */
 body {
   font-family: 'Pretendard', sans-serif;
   background: #eef2ff;
@@ -74,6 +75,7 @@ h1 {
   box-sizing: border-box;
 }
 
+/* 본문 / 파일 */
 .content-box {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -179,6 +181,31 @@ textarea {
   color: #4f46e5;
   font-size: 14px;
 }
+
+/* 🔍 이미지 확대 모달 */
+.image-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.image-modal-img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.image-modal-close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -218,6 +245,12 @@ textarea {
   <div class="back-btn">
     <a href="index.html">← 목록으로 돌아가기</a>
   </div>
+</div>
+
+<!-- 🔍 이미지 확대 모달 -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+  <span class="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">×</span>
+  <img id="modalImage" class="image-modal-img" src="" alt="확대 이미지">
 </div>
 
 <script>
@@ -285,6 +318,8 @@ async function loadPost() {
         const img = document.createElement("img");
         img.src = u;
         img.className = "file-item";
+        img.style.cursor = "pointer";
+        img.onclick = () => openImageModal(u);
         scrollBox.appendChild(img);
       } else if (
         urlLower.endsWith(".mp4") ||
@@ -473,6 +508,18 @@ document.getElementById("deleteBtn").onclick = async () => {
     window.location.href = "index.html";
   }
 };
+
+/* 🔍 이미지 확대 모달 열기/닫기 */
+function openImageModal(src) {
+  const modal = document.getElementById("imageModal");
+  const img = document.getElementById("modalImage");
+  img.src = src;
+  modal.style.display = "flex";
+}
+function closeImageModal() {
+  const modal = document.getElementById("imageModal");
+  modal.style.display = "none";
+}
 
 // 초기 로딩
 loadPost();
