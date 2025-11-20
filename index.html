@@ -337,13 +337,15 @@
     document.getElementById("fileInput").value = "";
   };
 
+  // 🔥 댓글 수까지 포함해서 글 목록 불러오기
   async function loadPosts(page = 1) {
     currentPage = page;
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, count } = await db
+    // 1) 글 목록
+    const { data: posts, count } = await db
       .from("posts")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -351,17 +353,33 @@
 
     totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
+    // 2) 각 글별 댓글 수 가져오기
+    const postsWithCounts = await Promise.all(
+      (posts || []).map(async (p) => {
+        const { count: c } = await db
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", p.id);
+
+        return { ...p, commentCount: c || 0 };
+      })
+    );
+
+    // 3) 화면에 렌더링
     const box = document.getElementById("postList");
     box.innerHTML = "";
 
-    data.forEach((p) => {
+    postsWithCounts.forEach((p) => {
       const div = document.createElement("div");
       div.className = "post-card";
       div.onclick = () => {
         window.location.href = `view.html?id=${p.id}`;
       };
+
+      const commentLabel = p.commentCount ? ` (${p.commentCount})` : "";
+
       div.innerHTML = `
-        <div class="post-title">${p.school} - ${p.name}</div>
+        <div class="post-title">${p.school} - ${p.name}${commentLabel}</div>
         <div class="post-meta">${p.manager} · ${new Date(
           p.created_at
         ).toLocaleString()}</div>
