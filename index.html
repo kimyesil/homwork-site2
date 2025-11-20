@@ -376,7 +376,9 @@
         window.location.href = `view.html?id=${p.id}`;
       };
 
-      const commentLabel = p.commentCount ? ` (${p.commentCount})` : "";
+     const commentLabel = p.commentCount
+  ? ` <span style="color:#3B82F6; font-weight:600;">(${p.commentCount})</span>`
+  : "";
 
       div.innerHTML = `
         <div class="post-title">${p.school} - ${p.name}${commentLabel}</div>
