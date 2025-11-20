@@ -94,6 +94,8 @@ h1 {
   flex: 0 0 auto;
   display: block;
 }
+
+/* 댓글 영역 */
 .comment-section {
   margin-top: 30px;
 }
@@ -112,6 +114,33 @@ h1 {
   margin-top: 4px;
   font-size: 14px;
 }
+
+/* 댓글 수정/삭제 버튼 */
+.comment-actions {
+  margin-top: 6px;
+  text-align: right;
+}
+.comment-btn {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  cursor: pointer;
+  margin-left: 4px;
+}
+.comment-btn:hover {
+  background: #e5e7eb;
+}
+.comment-btn.delete {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.comment-btn.delete:hover {
+  background: #fee2e2;
+}
+
 input, textarea {
   width: 100%;
   padding: 10px;
@@ -159,7 +188,7 @@ textarea {
   <h1>과제 상세보기</h1>
   <div class="meta" id="postMeta">불러오는 중...</div>
 
-  <!-- 🔐 비밀번호 입력 박스 (있으면 보이고, 없으면 자동 숨김) -->
+  <!-- 🔐 비밀번호 입력 박스 -->
   <div id="passwordBox" class="password-box" style="display:none;">
     <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.<br>
     글 작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해주세요.</p>
@@ -168,9 +197,8 @@ textarea {
     <button class="button-main" id="checkPwBtn" style="margin-top:10px;">확인</button>
   </div>
 
-  <!-- 처음엔 숨겼다가, 비번 맞으면 보여줌 -->
+  <!-- 내용/파일 영역 (처음엔 잠금 처리) -->
   <div class="content-box" id="postContent" style="display:none;"></div>
-
   <div class="file-box" id="fileBox" style="display:none;"></div>
 
   <!-- 삭제 버튼 -->
@@ -194,7 +222,7 @@ textarea {
 
 <script>
 const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";   
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -204,7 +232,7 @@ const postId = new URLSearchParams(window.location.search).get("id");
 // 🔐 관리자 마스터 비번
 const MASTER_PASSWORD = "3208";
 
-// 이 글의 비밀번호 (DB에서 가져옴)
+// 이 글의 저장된 비밀번호
 let postPassword = "";
 
 // 게시글 불러오기
@@ -220,16 +248,13 @@ async function loadPost() {
     return;
   }
 
-  // 메타 정보
   document.getElementById("postMeta").textContent =
     `${data.school} · ${data.name} · ${new Date(data.created_at).toLocaleString()} · ${data.manager}`;
 
-  // 내용 / 파일 / 비밀번호 저장
   document.getElementById("postContent").textContent = data.content || "";
-
   postPassword = data.password || "";
 
-  // 첨부파일 표시 (여러 장 + 가로 스크롤)
+  // 첨부파일 표시
   const box = document.getElementById("fileBox");
   box.innerHTML = "";
 
@@ -285,19 +310,18 @@ async function loadPost() {
     box.appendChild(scrollBox);
   }
 
-  // 🔐 비밀번호가 있는 글이면 → 비번 박스 보여주고, 내용은 잠가둠
+  // 비밀번호 유무에 따라 잠금 처리
   if (postPassword) {
     document.getElementById("passwordBox").style.display = "block";
     document.getElementById("postContent").style.display = "none";
     document.getElementById("fileBox").style.display = "none";
     document.getElementById("commentSection").style.display = "none";
   } else {
-    // 비밀번호 없는 과거 글이면 → 바로 보여줌
     unlockView();
   }
 }
 
-// 🔓 잠금 해제 함수
+// 🔓 잠금 해제
 function unlockView() {
   document.getElementById("passwordBox").style.display = "none";
   document.getElementById("postContent").style.display = "block";
@@ -337,7 +361,11 @@ async function loadComments() {
     div.className = "comment-card";
     div.innerHTML = `
       <div class="comment-meta">${c.name} · ${new Date(c.created_at).toLocaleString()}</div>
-      <div class="comment-text">${c.text}</div>
+      <div class="comment-text" id="comment-text-${c.id}">${c.text}</div>
+      <div class="comment-actions">
+        <button class="comment-btn" onclick="editComment('${c.id}')">수정</button>
+        <button class="comment-btn delete" onclick="deleteComment('${c.id}')">삭제</button>
+      </div>
     `;
     box.appendChild(div);
   });
@@ -368,6 +396,48 @@ document.getElementById("commentBtn").onclick = async () => {
   }
 };
 
+// 🔧 댓글 수정
+async function editComment(id) {
+  const textEl = document.getElementById(`comment-text-${id}`);
+  if (!textEl) return;
+
+  const current = textEl.textContent;
+  const updated = prompt("수정할 댓글 내용을 입력하세요.", current);
+
+  if (updated === null) return; // 취소
+  if (!updated.trim()) {
+    alert("내용이 비어 있습니다.");
+    return;
+  }
+
+  const { error } = await db
+    .from("comments")
+    .update({ text: updated.trim() })
+    .eq("id", id);
+
+  if (error) {
+    alert("댓글 수정 중 오류가 발생했습니다.");
+  } else {
+    loadComments();
+  }
+}
+
+// 🗑 댓글 삭제
+async function deleteComment(id) {
+  if (!confirm("이 댓글을 삭제하시겠습니까?")) return;
+
+  const { error } = await db
+    .from("comments")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("댓글 삭제 중 오류가 발생했습니다.");
+  } else {
+    loadComments();
+  }
+}
+
 // 글 삭제하기 (비밀번호 필요)
 document.getElementById("deleteBtn").onclick = async () => {
   const pw = prompt("삭제를 위해 비밀번호를 입력하세요 (작성 비밀번호 또는 관리자 비밀번호):");
@@ -377,14 +447,12 @@ document.getElementById("deleteBtn").onclick = async () => {
     return;
   }
 
-  // 글에 비밀번호가 있는 경우: 글 비번 또는 마스터 비번 허용
   if (postPassword) {
     if (pw !== postPassword && pw !== MASTER_PASSWORD) {
       alert("비밀번호가 틀렸습니다!");
       return;
     }
   } else {
-    // 예전 글(비번 없음)은 관리자만 삭제 가능
     if (pw !== MASTER_PASSWORD) {
       alert("관리자 비밀번호가 아닙니다. 삭제할 수 없습니다.");
       return;
@@ -398,11 +466,11 @@ document.getElementById("deleteBtn").onclick = async () => {
     .delete()
     .eq("id", postId);
 
-  if (!error) {
+  if (error) {
+    alert("삭제 중 오류가 발생했습니다.");
+  } else {
     alert("삭제되었습니다.");
     window.location.href = "index.html";
-  } else {
-    alert("삭제 중 오류가 발생했습니다.");
   }
 };
 
