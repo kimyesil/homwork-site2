@@ -7,6 +7,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+body {
+  font-family: 'Pretendard', sans-serif;
+  background: #eef2ff;
+  margin: 0;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 750px;
+  background: #fff;
+  padding: 30px 35px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.meta {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* 파일 스크롤 */
 .file-scroll {
   display: flex;
   overflow-x: auto;
@@ -26,35 +57,7 @@
   border-radius: 12px;
 }
 
-/* 전체 레이아웃 */
-body {
-  font-family: 'Pretendard', sans-serif;
-  background: #eef2ff;
-  margin: 0;
-  padding: 40px 20px;
-  display: flex;
-  justify-content: center;
-}
-.container {
-  width: 100%;
-  max-width: 750px;
-  background: #fff;
-  padding: 30px 35px;
-  border-radius: 20px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.08);
-}
-h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-}
-.meta {
-  margin-top: 6px;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-/* 🔐 비밀번호 박스 */
+/* 비밀번호 박스 */
 .password-box {
   margin-top: 15px;
   padding: 15px;
@@ -62,20 +65,15 @@ h1 {
   border-radius: 14px;
   border: 1px solid #fecaca;
 }
-.password-box p {
-  margin: 0 0 10px;
-  font-size: 14px;
-}
 .password-input {
   width: 100%;
   padding: 10px;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
   font-size: 14px;
-  box-sizing: border-box;
 }
 
-/* 본문 / 파일 */
+/* 본문 */
 .content-box {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -85,19 +83,8 @@ h1 {
   white-space: pre-wrap;
   line-height: 1.6;
 }
-.file-box {
-  margin-top: 18px;
-}
-.file-scroll img,
-.file-scroll video {
-  width: 250px;
-  border-radius: 12px;
-  margin-top: 10px;
-  flex: 0 0 auto;
-  display: block;
-}
 
-/* 댓글 영역 */
+/* 댓글 */
 .comment-section {
   margin-top: 30px;
 }
@@ -117,7 +104,6 @@ h1 {
   font-size: 14px;
 }
 
-/* 댓글 수정/삭제 버튼 */
 .comment-actions {
   margin-top: 6px;
   text-align: right;
@@ -131,31 +117,13 @@ h1 {
   cursor: pointer;
   margin-left: 4px;
 }
-.comment-btn:hover {
-  background: #e5e7eb;
-}
 .comment-btn.delete {
   color: #b91c1c;
   border-color: #fecaca;
   background: #fef2f2;
 }
-.comment-btn.delete:hover {
-  background: #fee2e2;
-}
 
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #d4d4d8;
-  font-size: 14px;
-  margin-top: 6px;
-  box-sizing: border-box;
-}
-textarea {
-  height: 80px;
-  resize: none;
-}
+/* 버튼 */
 .button-main {
   margin-top: 10px;
   padding: 12px 18px;
@@ -168,10 +136,12 @@ textarea {
   cursor: pointer;
   width: 100%;
 }
+
 .delete-btn {
   background: #ef4444 !important;
-  margin-top: 10px;
 }
+
+/* 뒤로가기 */
 .back-btn {
   margin-top: 20px;
   text-align: center;
@@ -179,10 +149,9 @@ textarea {
 .back-btn a {
   text-decoration: none;
   color: #4f46e5;
-  font-size: 14px;
 }
 
-/* 🔍 이미지 확대 모달 */
+/* 이미지 모달 */
 .image-modal {
   position: fixed;
   inset: 0;
@@ -196,7 +165,6 @@ textarea {
   max-width: 90%;
   max-height: 90%;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 .image-modal-close {
   position: fixed;
@@ -206,6 +174,7 @@ textarea {
   font-size: 26px;
   cursor: pointer;
 }
+
 </style>
 </head>
 
@@ -215,26 +184,24 @@ textarea {
   <h1>과제 상세보기</h1>
   <div class="meta" id="postMeta">불러오는 중...</div>
 
-  <!-- 🔐 비밀번호 입력 박스 -->
+  <!-- 비밀번호 박스 -->
   <div id="passwordBox" class="password-box" style="display:none;">
     <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.<br>
     글 작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해주세요.</p>
-    <input id="inputPassword" class="password-input" type="password" maxlength="4"
-           placeholder="조회 비밀번호 4자리">
-    <button class="button-main" id="checkPwBtn" style="margin-top:10px;">확인</button>
+    <input id="inputPassword" class="password-input" type="password" maxlength="4" placeholder="조회 비밀번호 4자리">
+    <button class="button-main" id="checkPwBtn">확인</button>
   </div>
 
-  <!-- 내용/파일 영역 (처음엔 잠금 처리) -->
   <div class="content-box" id="postContent" style="display:none;"></div>
   <div class="file-box" id="fileBox" style="display:none;"></div>
 
-  <!-- 삭제 버튼 -->
+  <!-- 글 수정 / 삭제 -->
+  <button class="button-main" id="editBtn">글 수정하기</button>
   <button class="button-main delete-btn" id="deleteBtn">글 삭제하기</button>
 
-  <!-- 댓글 영역 -->
+  <!-- 댓글 -->
   <div class="comment-section" id="commentSection" style="display:none;">
-    <h2 style="font-size:18px;margin-bottom:10px;">💬 댓글</h2>
-
+    <h2 style="font-size:18px;">💬 댓글</h2>
     <div id="commentList"></div>
 
     <input id="commentName" placeholder="이름">
@@ -242,154 +209,112 @@ textarea {
     <button class="button-main" id="commentBtn">댓글 달기</button>
   </div>
 
-  <div class="back-btn">
-    <a href="index.html">← 목록으로 돌아가기</a>
-  </div>
+  <div class="back-btn"><a href="index.html">← 목록으로 돌아가기</a></div>
 </div>
 
-<!-- 🔍 이미지 확대 모달 -->
+<!-- 이미지 모달 -->
 <div id="imageModal" class="image-modal" onclick="closeImageModal()">
   <span class="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">×</span>
-  <img id="modalImage" class="image-modal-img" src="" alt="확대 이미지">
+  <img id="modalImage" class="image-modal-img" src="">
 </div>
 
 <script>
 const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI…(생략)…";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// URL에서 post id
-const postId = new URLSearchParams(window.location.search).get("id");
-
-// 🔐 관리자 마스터 비번
+/* 파라미터 */
+const postId = new URLSearchParams(location.search).get("id");
 const MASTER_PASSWORD = "3208";
 
-// 이 글의 저장된 비밀번호
 let postPassword = "";
+let editing = false;
 
-// 게시글 불러오기
+/* 게시글 로드 */
 async function loadPost() {
-  const { data, error } = await db
-    .from("posts")
-    .select("*")
-    .eq("id", postId)
-    .single();
+  const { data, error } = await db.from("posts").select("*").eq("id", postId).single();
 
-  if (!data || error) {
-    document.getElementById("postMeta").textContent = "게시글을 찾을 수 없습니다.";
+  if (!data) {
+    postMeta.textContent = "게시글을 찾을 수 없습니다.";
     return;
   }
 
-  document.getElementById("postMeta").textContent =
+  postMeta.textContent =
     `${data.school} · ${data.name} · ${new Date(data.created_at).toLocaleString()} · ${data.manager}`;
 
-  document.getElementById("postContent").textContent = data.content || "";
+  postContent.textContent = data.content;
   postPassword = data.password || "";
 
-  // 첨부파일 표시
-  const box = document.getElementById("fileBox");
+  /* 파일 처리 */
+  const box = fileBox;
   box.innerHTML = "";
 
   if (data.file_url) {
     let urls = [];
-
     try {
-      const parsed = JSON.parse(data.file_url);
-      if (Array.isArray(parsed)) urls = parsed;
-      else if (typeof parsed === "string") urls = [parsed];
+      urls = JSON.parse(data.file_url);
     } catch {
       urls = [data.file_url];
     }
 
-    const scrollBox = document.createElement("div");
-    scrollBox.className = "file-scroll";
+    const scroll = document.createElement("div");
+    scroll.className = "file-scroll";
 
     urls.forEach((u) => {
-      const urlLower = u.toLowerCase();
-
-      if (
-        urlLower.endsWith(".jpg") ||
-        urlLower.endsWith(".jpeg") ||
-        urlLower.endsWith(".png") ||
-        urlLower.endsWith(".gif") ||
-        urlLower.endsWith(".webp")
-      ) {
+      if (/\.(jpg|jpeg|png|gif|webp)$/i.test(u)) {
         const img = document.createElement("img");
         img.src = u;
         img.className = "file-item";
         img.style.cursor = "pointer";
         img.onclick = () => openImageModal(u);
-        scrollBox.appendChild(img);
-      } else if (
-        urlLower.endsWith(".mp4") ||
-        urlLower.endsWith(".mov") ||
-        urlLower.endsWith(".avi")
-      ) {
+        scroll.appendChild(img);
+      } else if (/\.(mp4|mov|avi)$/i.test(u)) {
         const video = document.createElement("video");
         video.src = u;
         video.controls = true;
         video.className = "file-item";
-        scrollBox.appendChild(video);
-      } else {
-        const a = document.createElement("a");
-        a.href = u;
-        a.target = "_blank";
-        a.textContent = "첨부파일 열기";
-        a.style.flex = "0 0 auto";
-        a.style.marginTop = "10px";
-        scrollBox.appendChild(a);
+        scroll.appendChild(video);
       }
     });
 
-    box.appendChild(scrollBox);
+    box.appendChild(scroll);
   }
 
-  // 비밀번호 유무에 따라 잠금 처리
+  /* 비밀번호 잠금 */
   if (postPassword) {
-    document.getElementById("passwordBox").style.display = "block";
-    document.getElementById("postContent").style.display = "none";
-    document.getElementById("fileBox").style.display = "none";
-    document.getElementById("commentSection").style.display = "none";
+    passwordBox.style.display = "block";
   } else {
-    unlockView();
+    unlock();
   }
 }
 
-// 🔓 잠금 해제
-function unlockView() {
-  document.getElementById("passwordBox").style.display = "none";
-  document.getElementById("postContent").style.display = "block";
-  document.getElementById("fileBox").style.display = "block";
-  document.getElementById("commentSection").style.display = "block";
+/* 잠금 해제 */
+function unlock() {
+  passwordBox.style.display = "none";
+  postContent.style.display = "block";
+  fileBox.style.display = "block";
+  commentSection.style.display = "block";
 }
 
-// 비밀번호 확인 버튼
-document.getElementById("checkPwBtn").onclick = () => {
-  const inputPw = document.getElementById("inputPassword").value.trim();
+/* 비번 체크 */
+checkPwBtn.onclick = () => {
+  const pw = inputPassword.value.trim();
 
-  if (!inputPw) {
-    alert("비밀번호를 입력해주세요!");
-    return;
-  }
-
-  if (inputPw === postPassword || inputPw === MASTER_PASSWORD) {
-    unlockView();
+  if (pw === postPassword || pw === MASTER_PASSWORD) {
+    unlock();
   } else {
     alert("비밀번호가 틀렸습니다!");
   }
 };
 
-// 댓글 불러오기
+/* 댓글 로드 */
 async function loadComments() {
-  const { data } = await db
-    .from("comments")
+  const { data } = await db.from("comments")
     .select("*")
     .eq("post_id", postId)
-    .order("created_at", { ascending: true });
+    .order("created_at");
 
-  const box = document.getElementById("commentList");
-  box.innerHTML = "";
+  commentList.innerHTML = "";
 
   (data || []).forEach(c => {
     const div = document.createElement("div");
@@ -400,130 +325,126 @@ async function loadComments() {
       <div class="comment-actions">
         <button class="comment-btn" onclick="editComment('${c.id}')">수정</button>
         <button class="comment-btn delete" onclick="deleteComment('${c.id}')">삭제</button>
-      </div>
-    `;
-    box.appendChild(div);
+      </div>`;
+    commentList.appendChild(div);
   });
 }
 
-// 댓글 작성
-document.getElementById("commentBtn").onclick = async () => {
-  const name = document.getElementById("commentName").value.trim();
-  const text = document.getElementById("commentText").value.trim();
+/* 댓글 작성 */
+commentBtn.onclick = async () => {
+  const name = commentName.value.trim();
+  const text = commentText.value.trim();
 
-  if (!name || !text) {
-    alert("이름과 댓글 내용을 입력해주세요!");
-    return;
-  }
+  if (!name || !text) return alert("이름과 댓글 내용을 입력하세요");
 
-  const { error } = await db.from("comments").insert({
-    post_id: postId,
-    name,
-    text
-  });
-
-  if (!error) {
-    document.getElementById("commentName").value = "";
-    document.getElementById("commentText").value = "";
-    loadComments();
-  } else {
-    alert("댓글 저장 중 오류가 발생했습니다.");
-  }
+  await db.from("comments").insert({ post_id: postId, name, text });
+  commentName.value = "";
+  commentText.value = "";
+  loadComments();
 };
 
-// 🔧 댓글 수정
+/* 댓글 수정 */
 async function editComment(id) {
-  const textEl = document.getElementById(`comment-text-${id}`);
-  if (!textEl) return;
+  const current = document.getElementById(`comment-text-${id}`).textContent;
+  const updated = prompt("수정할 내용을 입력하세요", current);
 
-  const current = textEl.textContent;
-  const updated = prompt("수정할 댓글 내용을 입력하세요.", current);
-
-  if (updated === null) return; // 취소
-  if (!updated.trim()) {
-    alert("내용이 비어 있습니다.");
-    return;
-  }
-
-  const { error } = await db
-    .from("comments")
-    .update({ text: updated.trim() })
-    .eq("id", id);
-
-  if (error) {
-    alert("댓글 수정 중 오류가 발생했습니다.");
-  } else {
-    loadComments();
-  }
+  if (!updated?.trim()) return;
+  await db.from("comments").update({ text: updated.trim() }).eq("id", id);
+  loadComments();
 }
 
-// 🗑 댓글 삭제
+/* 댓글 삭제 */
 async function deleteComment(id) {
-  if (!confirm("이 댓글을 삭제하시겠습니까?")) return;
-
-  const { error } = await db
-    .from("comments")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    alert("댓글 삭제 중 오류가 발생했습니다.");
-  } else {
-    loadComments();
-  }
+  if (!confirm("삭제할까요?")) return;
+  await db.from("comments").delete().eq("id", id);
+  loadComments();
 }
 
-// 글 삭제하기 (비밀번호 필요)
-document.getElementById("deleteBtn").onclick = async () => {
-  const pw = prompt("삭제를 위해 비밀번호를 입력하세요 (작성 비밀번호 또는 관리자 비밀번호):");
+/* 글 삭제 */
+deleteBtn.onclick = async () => {
+  const pw = prompt("작성 비밀번호 또는 관리자 비밀번호를 입력하세요");
+  if (!pw) return;
 
-  if (!pw) {
-    alert("비밀번호를 입력해야 삭제할 수 있습니다.");
+  if (pw !== postPassword && pw !== MASTER_PASSWORD) {
+    alert("비밀번호가 틀렸습니다!");
     return;
   }
 
-  if (postPassword) {
-    if (pw !== postPassword && pw !== MASTER_PASSWORD) {
-      alert("비밀번호가 틀렸습니다!");
-      return;
-    }
-  } else {
-    if (pw !== MASTER_PASSWORD) {
-      alert("관리자 비밀번호가 아닙니다. 삭제할 수 없습니다.");
-      return;
-    }
-  }
+  if (!confirm("정말 삭제할까요?")) return;
 
-  if (!confirm("정말 삭제하시겠습니까?")) return;
-
-  const { error } = await db
-    .from("posts")
-    .delete()
-    .eq("id", postId);
-
-  if (error) {
-    alert("삭제 중 오류가 발생했습니다.");
-  } else {
-    alert("삭제되었습니다.");
-    window.location.href = "index.html";
-  }
+  await db.from("posts").delete().eq("id", postId);
+  alert("삭제되었습니다");
+  location.href = "index.html";
 };
 
-/* 🔍 이미지 확대 모달 열기/닫기 */
+/* ------------ 글 수정 기능 ------------ */
+
+editBtn.onclick = () => {
+  if (!editing) enterEditMode();
+  else saveEdit();
+};
+
+function enterEditMode() {
+  editing = true;
+
+  const content = postContent.textContent;
+
+  postContent.innerHTML = `
+    <textarea id="editContent" style="width:100%; height:200px;">${content}</textarea>
+    <p style="margin-top:15px; font-size:14px;">📎 파일을 새로 업로드하면 기존 파일은 모두 교체됩니다.</p>
+    <input type="file" id="editFiles" accept="image/*,video/*" multiple>
+  `;
+
+  editBtn.textContent = "저장하기";
+}
+
+/* 저장 */
+async function saveEdit() {
+  const newContent = document.getElementById("editContent").value.trim();
+  const newFiles = [...document.getElementById("editFiles").files];
+
+  let urls = [];
+
+  if (newFiles.length === 0) {
+    const { data } = await db.from("posts")
+      .select("file_url")
+      .eq("id", postId)
+      .single();
+    urls = JSON.parse(data.file_url || "[]");
+  } else {
+    for (const file of newFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { data: up } = await db.storage.from("uploads").upload(path, file);
+      const { data: pub } = db.storage.from("uploads").getPublicUrl(up.path);
+
+      urls.push(pub.publicUrl);
+    }
+  }
+
+  await db.from("posts").update({
+    content: newContent,
+    file_url: JSON.stringify(urls)
+  }).eq("id", postId);
+
+  alert("수정 완료!");
+  location.reload();
+}
+
+/* 모달 */
 function openImageModal(src) {
-  const modal = document.getElementById("imageModal");
-  const img = document.getElementById("modalImage");
-  img.src = src;
-  modal.style.display = "flex";
+  modalImage.src = src;
+  imageModal.style.display = "flex";
 }
 function closeImageModal() {
-  const modal = document.getElementById("imageModal");
-  modal.style.display = "none";
+  imageModal.style.display = "none";
 }
 
-// 초기 로딩
+/* 초기 */
 loadPost();
 loadComments();
 </script>
+
 </body>
 </html>

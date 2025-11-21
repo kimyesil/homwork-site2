@@ -36,8 +36,6 @@
       margin-top: 5px;
       margin-bottom: 15px;
     }
-
-    /* 공지 박스 */
     .notice-box {
       background:#fff7d6;
       border:1px solid #facc15;
@@ -67,13 +65,9 @@
       padding:4px 8px;
       border-radius:8px;
     }
-    .notice-toggle-btn:hover {
-      background:rgba(250,204,21,0.2);
-    }
     .notice-content {
       margin-top:4px;
     }
-
     .button-main {
       padding: 12px 18px;
       border-radius: 10px;
@@ -98,7 +92,6 @@
       border-radius: 10px;
       border: 1px solid #d4d4d8;
       font-size: 14px;
-      box-sizing: border-box;
     }
     textarea {
       height: 120px;
@@ -142,12 +135,13 @@
     }
   </style>
 </head>
+
 <body>
 <div class="container">
   <h1>평내 에듀플렉스 과제제출</h1>
   <p class="subtitle">과제를 제출하고 제출된 목록을 확인할 수 있어요.</p>
 
-  <!-- 🔥 공지 접기/열기 -->
+  <!-- 공지사항 -->
   <div id="noticeBox" class="notice-box">
     <div class="notice-header">
       <div class="notice-title">📢 공지사항</div>
@@ -156,20 +150,18 @@
     <div id="noticeContent" class="notice-content">
       <br>
       이 페이지는 <b>에듀플렉스 상담관리 과제 제출만을 위한 공간</b>입니다.<br><br>
-
       작성 예시<br>
       ● 역사 개념 암기 완료<br>
       ● 영어 본문 2줄 구문 분석 완료<br>
       ● 수학 문제풀이 및 오답 정리 완료<br>
       <b>※ 학습 교재 사진 첨부 필수</b><br><br>
-
-      <b style="color:#d97706;">개인 학습 정보 보호를 위해 업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
+      <b style="color:#d97706;">업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
     </div>
   </div>
 
   <button class="button-main" id="openFormBtn">과제 제출하기</button>
 
-  <!-- 🔥 글쓰기 폼 -->
+  <!-- 글쓰기 폼 -->
   <div class="form" id="formBox">
     <input id="school" placeholder="학교/학년 (예: 에듀중2)">
     <input id="name" placeholder="이름">
@@ -182,63 +174,44 @@
 
     <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
 
-    <!-- 🔐 비밀번호 추가 -->
-    <input id="postPassword"
-           type="password"
-           maxlength="4"
-           placeholder="조회 비밀번호 4자리 (예: 1234)"
-           style="margin-top:5px;">
+    <input id="postPassword" type="password" maxlength="4" placeholder="조회 비밀번호 4자리">
 
     <input type="file" id="fileInput" accept="image/*,video/*" multiple>
-
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
 
-  <h2 style="margin-top:30px;">📌 제출된 과제 목록</h2>
+  <!-- 🔍 검색창 -->
+  <input id="searchInput" placeholder="학생 이름 검색 (예: 김서하)"
+         style="width:100%; padding:10px; margin:20px 0; border-radius:10px; border:1px solid #d4d4d8;">
+
+  <h2>📌 제출된 과제 목록</h2>
   <div id="postList"></div>
   <div id="pagination" class="pagination"></div>
 </div>
 
 <script>
   const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
-
-  const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI…(생략)…";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const PAGE_SIZE = 10;
   let currentPage = 1;
   let totalPages = 1;
+  let searchKeyword = "";
 
-  // 🔥 이메일 알림 기능 ON
-  const ENABLE_EMAIL = true;
-
-  // 🔥 Edge Function URL
-  const FUNCTION_URL =
-    "https://kxbyfldxcrdegnfmzgrm.supabase.co/functions/v1/new-post-email";
-
-  // 공지 열기/닫기
+  /* 공지 열기/닫기 */
   const noticeContent = document.getElementById("noticeContent");
   const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
-
   let collapsed = localStorage.getItem("noticeCollapsed") === "1";
-
   function updateNotice() {
-    if (collapsed) {
-      noticeContent.style.display = "none";
-      toggleNoticeBtn.textContent = "열기 ▼";
-    } else {
-      noticeContent.style.display = "block";
-      toggleNoticeBtn.textContent = "닫기 ▲";
-    }
+    noticeContent.style.display = collapsed ? "none" : "block";
+    toggleNoticeBtn.textContent = collapsed ? "열기 ▼" : "닫기 ▲";
   }
-
   toggleNoticeBtn.onclick = () => {
     collapsed = !collapsed;
     localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
     updateNotice();
   };
-
   updateNotice();
 
   document.getElementById("openFormBtn").onclick = () => {
@@ -246,146 +219,98 @@
     box.style.display = box.style.display === "flex" ? "none" : "flex";
   };
 
-  async function sendEmail(info) {
-    try {
-      await fetch(FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: "Bearer " + SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify(info)
-      });
-    } catch (e) {
-      console.log("이메일 전송 오류(무시 가능)", e);
-    }
-  }
+  /* 검색 */
+  document.getElementById("searchInput").oninput = (e) => {
+    searchKeyword = e.target.value.trim();
+    loadPosts(1);
+  };
 
-  // 🔥 제출하기 버튼 클릭 이벤트 (비밀번호 포함 버전, 딱 하나만!)
+  /* 제출 */
   document.getElementById("submitPost").onclick = async () => {
-    const school = document.getElementById("school").value.trim();
+    const school = school.value.trim();
     const name = document.getElementById("name").value.trim();
     const manager = document.getElementById("manager").value.trim();
     const content = document.getElementById("content").value.trim();
-    const password = document.getElementById("postPassword").value.trim();
-    const files = [...document.getElementById("fileInput").files];
+    const password = postPassword.value.trim();
+    const files = [...fileInput.files];
 
     if (!school || !name || !manager || !content) {
-      alert("모든 내용을 입력해주세요!");
+      alert("모든 내용을 입력하세요!");
       return;
     }
-
-    // 🔐 비밀번호 체크
     if (!password || password.length !== 4) {
-      alert("조회 비밀번호 4자리를 입력해주세요!");
+      alert("조회 비밀번호 4자리를 입력하세요!");
       return;
     }
 
-    // 🔥 파일 업로드
     const urls = [];
     for (const file of files) {
       const ext = file.name.split(".").pop();
-      const path = `homework/${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2)}.${ext}`;
-
-      const { data: up, error: upErr } = await db.storage
-        .from("uploads")
-        .upload(path, file);
-
-      if (upErr) {
-        alert("파일 업로드 실패: " + upErr.message);
-        return;
-      }
-
-      const { data: pub } = db.storage
-        .from("uploads")
-        .getPublicUrl(up.path);
-
+      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data: up } = await db.storage.from("uploads").upload(path, file);
+      const { data: pub } = db.storage.from("uploads").getPublicUrl(up.path);
       urls.push(pub.publicUrl);
     }
 
-    // 🔥 DB 저장 (password 포함!)
-    const { error } = await db.from("posts").insert({
-      school,
-      name,
-      manager,
-      content,
+    await db.from("posts").insert({
+      school, name, manager, content,
       file_url: JSON.stringify(urls),
       password
     });
 
-    if (error) {
-      alert("저장 오류: " + error.message);
-      return;
-    }
-
-    // 🔥 이메일 보내기
-    if (ENABLE_EMAIL) sendEmail({ school, name, manager });
-
     alert("제출 완료!");
-    loadPosts(1);
+    formBox.style.display = "none";
+    school.value = "";
+    name.value = "";
+    manager.value = "";
+    content.value = "";
+    postPassword.value = "";
+    fileInput.value = "";
 
-    // 폼 초기화
-    document.getElementById("formBox").style.display = "none";
-    document.getElementById("school").value = "";
-    document.getElementById("name").value = "";
-    document.getElementById("manager").value = "";
-    document.getElementById("content").value = "";
-    document.getElementById("postPassword").value = "";
-    document.getElementById("fileInput").value = "";
+    loadPosts(1);
   };
 
-  // 🔥 댓글 수까지 포함해서 글 목록 불러오기
+  /* 목록 + 검색 */
   async function loadPosts(page = 1) {
     currentPage = page;
-
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    // 1) 글 목록
-    const { data: posts, count } = await db
-      .from("posts")
+    let query = db.from("posts")
       .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to);
+      .order("created_at", { ascending: false });
 
+    if (searchKeyword) {
+      query = query.ilike("name", `%${searchKeyword}%`);
+    }
+
+    const { data: posts, count } = await query.range(from, to);
     totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
-    // 2) 각 글별 댓글 수 가져오기
     const postsWithCounts = await Promise.all(
       (posts || []).map(async (p) => {
         const { count: c } = await db
           .from("comments")
           .select("*", { count: "exact", head: true })
           .eq("post_id", p.id);
-
-        return { ...p, commentCount: c || 0 };
+        return { ...p, commentCount: c };
       })
     );
 
-    // 3) 화면에 렌더링
-    const box = document.getElementById("postList");
+    const box = postList;
     box.innerHTML = "";
 
     postsWithCounts.forEach((p) => {
       const div = document.createElement("div");
       div.className = "post-card";
-      div.onclick = () => {
-        window.location.href = `view.html?id=${p.id}`;
-      };
+      div.onclick = () => location.href = `view.html?id=${p.id}`;
 
-     const commentLabel = p.commentCount
-  ? ` <span style="color:#3B82F6; font-weight:600;">(${p.commentCount})</span>`
-  : "";
+      const commentLabel = p.commentCount
+        ? ` <span style="color:#3B82F6;">(${p.commentCount})</span>` : "";
 
       div.innerHTML = `
-       <div class="post-title">🔒 ${p.school} - ${p.name}${commentLabel}</div>
-        <div class="post-meta">${p.manager} · ${new Date(
-          p.created_at
-        ).toLocaleString()}</div>
-      `;
+        <div class="post-title">🔒 ${p.school} - ${p.name}${commentLabel}</div>
+        <div class="post-meta">${p.manager} · ${new Date(p.created_at).toLocaleString()}</div>`;
       box.appendChild(div);
     });
 
@@ -393,16 +318,13 @@
   }
 
   function renderPagination() {
-    const box = document.getElementById("pagination");
-    box.innerHTML = "";
-
+    pagination.innerHTML = "";
     for (let i = 1; i <= totalPages; i++) {
       const btn = document.createElement("button");
       btn.textContent = i;
       btn.className = "page-btn" + (i === currentPage ? " active" : "");
       btn.onclick = () => loadPosts(i);
-
-      box.appendChild(btn);
+      pagination.appendChild(btn);
     }
   }
 
