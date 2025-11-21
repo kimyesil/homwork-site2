@@ -1,178 +1,224 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>평내 에듀플렉스 과제제출</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>평내 에듀플렉스 과제제출</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    input,
+    textarea,
+    select {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 10px;
+      border: 1px solid #d4d4d8;
+      font-size: 14px;
+      padding: 10px;
+      display: block;
+    }
 
-input, textarea, select {
-  width: 100%;
-  max-width: 100%;
-  border-radius: 10px;
-  border: 1px solid #d4d4d8;
-  font-size: 14px;
-  padding: 10px;
-  display: block;
-}
+    body {
+      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont;
+      background: #eef2ff;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 750px;
+      background: #fff;
+      padding: 30px 35px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .subtitle {
+      font-size: 14px;
+      text-align: center;
+      color: #6b7280;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
 
-body {
-  font-family: 'Pretendard', sans-serif;
-  background: #eef2ff;
-  margin: 0;
-  padding: 40px 20px;
-  display: flex;
-  justify-content: center;
-}
+    /* 공지 박스 */
+    .notice-box {
+      background:#fff7d6;
+      border:1px solid #facc15;
+      padding:14px 16px 10px;
+      border-radius:14px;
+      margin-top:25px;
+      margin-bottom:20px;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .notice-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+    }
+    .notice-title {
+      font-size:15px;
+      font-weight:700;
+    }
+    .notice-toggle-btn {
+      border:none;
+      background:transparent;
+      font-size:12px;
+      color:#92400e;
+      cursor:pointer;
+      padding:4px 8px;
+      border-radius:8px;
+    }
+    .notice-toggle-btn:hover {
+      background:rgba(250,204,21,0.2);
+    }
+    .notice-content {
+      margin-top:4px;
+    }
 
-.container {
-  width: 100%;
-  max-width: 750px;
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.06);
-}
+    .button-main {
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+    }
+    .form {
+      margin-top: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background:#f9fafb;
+      padding:16px 14px;
+      border-radius:14px;
+    }
+    /* 내용 입력칸은 조금 더 크게 */
+    #content {
+      height: 160px;
+      resize: none;
+    }
 
-h1 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-}
+    .search-input {
+      margin-top: 24px;
+      margin-bottom: 6px;
+    }
 
-.button-main {
-  width: 100%;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: #4f46e5;
-  color: white;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  margin: 10px 0;
-}
-
-.post-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 18px 15px;
-  margin-bottom: 12px;
-  cursor: pointer;
-}
-
-.post-title {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.post-meta {
-  color: #6b7280;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.page-btn {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid #d4d4d8;
-  background: #fff;
-  margin: 0 4px;
-  cursor: pointer;
-}
-
-.page-btn.active {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-}
-
-.notice-box {
-  background: #fff8e1;
-  border: 1px solid #fddc9e;
-  padding: 18px;
-  border-radius: 14px;
-  margin-bottom: 20px;
-}
-
-.notice-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
-}
-
-#formBox {
-  display: none;
-  flex-direction: column;
-  gap: 12px;
-  background: #f9fafb;
-  padding: 20px;
-  border-radius: 16px;
-  margin-top: 16px;
-}
-
-</style>
+    .post-card {
+      background: #f9fafb;
+      padding: 15px 18px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .post-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .post-meta {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    .pagination {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .page-btn {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin: 0 3px;
+      border: 1px solid #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    .page-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+  </style>
 </head>
-
 <body>
 <div class="container">
-
   <h1>평내 에듀플렉스 과제제출</h1>
-  <p style="color:#6b7280; margin-bottom:20px;">
-    과제를 제출하고 제출된 목록을 확인할 수 있어요.
-  </p>
+  <p class="subtitle">과제를 제출하고 제출된 목록을 확인할 수 있어요.</p>
 
-  <!-- 공지사항 -->
-  <div class="notice-box">
+  <!-- 🔥 공지 접기/열기 -->
+  <div id="noticeBox" class="notice-box">
     <div class="notice-header">
-      <span>📢 공지사항</span>
-      <button id="toggleNoticeBtn" style="border:none;background:none;cursor:pointer;font-size:14px;">닫기 ▲</button>
+      <div class="notice-title">📢 공지사항</div>
+      <button id="toggleNoticeBtn" class="notice-toggle-btn">닫기 ▲</button>
     </div>
+    <div id="noticeContent" class="notice-content">
+      <br>
+      이 페이지는 <b>에듀플렉스 상담관리 과제 제출만을 위한 공간</b>입니다.<br><br>
 
-    <div id="noticeContent" style="margin-top:10px;">
-      ● 역사 개념 암기 완료 <br>
-      ● 영어 본문 2줄 구문 분석 완료 <br>
-      ● 수학 문제풀이 및 오답 정리 완료 <br>
-      ※ 학습 교재 사진 첨부 필수<br><br>
-      업로드한 사진은 24시간 후 자동 삭제됩니다.
+      작성 예시<br>
+      ● 역사 개념 암기 완료<br>
+      ● 영어 본문 2줄 구문 분석 완료<br>
+      ● 수학 문제풀이 및 오답 정리 완료<br>
+      <b>※ 학습 교재 사진 첨부 필수</b><br><br>
+
+      <b style="color:#d97706;">개인 학습 정보 보호를 위해 업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
     </div>
   </div>
 
   <button class="button-main" id="openFormBtn">과제 제출하기</button>
 
-  <!-- 제출 폼 -->
-  <div id="formBox">
-    <input id="school" placeholder="학교 (예: 평내고1)">
-    <input id="name" placeholder="이름 (예: 이나영)">
+  <!-- 🔥 글쓰기 폼 -->
+  <div class="form" id="formBox">
+    <input id="school" placeholder="학교/학년 (예: 에듀중2)">
+    <input id="name" placeholder="이름">
+
     <select id="manager">
       <option value="">담당 매니저 선택</option>
-      <option>김예실M</option>
-      <option>박제민M</option>
+      <option value="김예실M">김예실M</option>
+      <option value="박제민M">박제민M</option>
     </select>
-<textarea id="content" placeholder="전달 내용을 입력하세요" style="height:180px;"></textarea>
-    <input id="postPassword" type="password" maxlength="4" placeholder="조회 비밀번호 4자리">
-    <input type="file" id="fileInput" multiple>
+
+    <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
+
+    <!-- 🔐 비밀번호 -->
+    <input id="postPassword"
+           type="password"
+           maxlength="4"
+           placeholder="조회 비밀번호 4자리 (예: 1234)"
+           style="margin-top:5px;">
+
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
 
-  <!-- 검색 -->
-  <input id="searchName" placeholder="학생 이름 검색 (예: 김예듀)" style="margin-top:25px;">
+  <!-- 🔍 이름 검색 -->
+  <input id="searchName" class="search-input" placeholder="학생 이름 검색 (예: 김예듀)">
 
-  <!-- 목록 -->
-  <h2 style="margin-top:28px; font-size:20px;">📌 제출된 과제 목록</h2>
-
+  <h2 style="margin-top:18px;">📌 제출된 과제 목록</h2>
   <div id="postList"></div>
-
-  <div id="pagination" style="margin-top:12px;"></div>
-
+  <div id="pagination" class="pagination"></div>
 </div>
 
 <script>
@@ -187,6 +233,7 @@ h1 {
   let totalPages = 1;
   let currentSearchName = "";
 
+  // 🔥 이메일 알림 기능 ON
   const ENABLE_EMAIL = true;
   const FUNCTION_URL =
     "https://kxbyfldxcrdegnfmzgrm.supabase.co/functions/v1/new-post-email";
@@ -198,19 +245,18 @@ h1 {
         headers: {
           "Content-Type": "application/json",
           apikey: SUPABASE_ANON_KEY,
-          Authorization: "Bearer " + SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + SUPABASE_ANON_KEY
         },
-        body: JSON.stringify(info),
+        body: JSON.stringify(info)
       });
     } catch (e) {
       console.log("이메일 전송 오류(무시 가능)", e);
     }
   }
 
-  // ===== 공지 토글 =====
+  // 공지 열기/닫기
   const noticeContent = document.getElementById("noticeContent");
   const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
-
   let collapsed = localStorage.getItem("noticeCollapsed") === "1";
 
   function updateNotice() {
@@ -230,24 +276,21 @@ h1 {
   };
   updateNotice();
 
-  // ===== 폼 열기/닫기 =====
+  // 폼 토글
   document.getElementById("openFormBtn").onclick = () => {
     const box = document.getElementById("formBox");
     box.style.display = box.style.display === "flex" ? "none" : "flex";
   };
 
-  // ===== 학생 이름 검색 =====
+  // 이름 검색
   const searchInput = document.getElementById("searchName");
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      currentSearchName = searchInput.value.trim();
-      loadPosts(1);
-    });
-  }
+  searchInput.addEventListener("input", () => {
+    currentSearchName = searchInput.value.trim();
+    loadPosts(1);
+  });
 
-  // ===== 과제 제출하기 버튼 =====
+  // 🔥 제출하기 버튼
   document.getElementById("submitPost").onclick = async () => {
-    // 1) 요소 가져오기
     const schoolInput   = document.getElementById("school");
     const nameInput     = document.getElementById("name");
     const managerSelect = document.getElementById("manager");
@@ -255,7 +298,6 @@ h1 {
     const pwInput       = document.getElementById("postPassword");
     const fileInput     = document.getElementById("fileInput");
 
-    // 2) 값 읽기
     const school  = schoolInput.value.trim();
     const name    = nameInput.value.trim();
     const manager = managerSelect.value.trim();
@@ -263,7 +305,6 @@ h1 {
     const password = pwInput.value.trim();
     const files   = [...fileInput.files];
 
-    // 3) 유효성 검사
     if (!school || !name || !manager || !content) {
       alert("모든 내용을 입력해주세요!");
       return;
@@ -274,23 +315,19 @@ h1 {
       return;
     }
 
-    // (필요하면 사진 필수로 바꾸고 싶을 때)
+    // (필요하면 사진 필수로 강제)
     // if (files.length === 0) {
     //   alert("학습 교재 사진을 최소 1장 첨부해주세요!");
     //   return;
     // }
 
-    // 4) 파일 업로드
+    // 파일 업로드
     const urls = [];
     for (const file of files) {
       const ext = file.name.split(".").pop();
-      const path =
-        "homework/" +
-        Date.now() +
-        "_" +
-        Math.random().toString(36).slice(2) +
-        "." +
-        ext;
+      const path = `homework/${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
 
       const { data: up, error: upErr } = await db.storage
         .from("uploads")
@@ -309,14 +346,14 @@ h1 {
       urls.push(pub.publicUrl);
     }
 
-    // 5) DB 저장
+    // DB 저장
     const { error } = await db.from("posts").insert({
       school,
       name,
       manager,
       content,
       file_url: JSON.stringify(urls),
-      password,
+      password
     });
 
     if (error) {
@@ -325,14 +362,10 @@ h1 {
       return;
     }
 
-    // 6) 이메일 알림
-    if (ENABLE_EMAIL) {
-      sendEmail({ school, name, manager });
-    }
+    if (ENABLE_EMAIL) sendEmail({ school, name, manager });
 
     alert("제출 완료!");
 
-    // 7) 폼 초기화
     document.getElementById("formBox").style.display = "none";
     schoolInput.value = "";
     nameInput.value = "";
@@ -341,11 +374,10 @@ h1 {
     pwInput.value = "";
     fileInput.value = "";
 
-    // 8) 목록 새로고침
     loadPosts(1);
   };
 
-  // ===== 글 목록 불러오기 (+ 댓글 수) =====
+  // 🔥 댓글 수까지 포함해서 글 목록 불러오기
   async function loadPosts(page = 1) {
     currentPage = page;
 
@@ -366,19 +398,20 @@ h1 {
 
     if (error) {
       console.error(error);
-      alert("목록 불러오기 오류가 발생했습니다.");
+      alert("목록 불러오는 중 오류가 발생했습니다.");
       return;
     }
 
     totalPages = Math.ceil((count || 0) / PAGE_SIZE);
 
-    // 댓글 수 합치기
+    // 각 글별 댓글 수 가져오기
     const postsWithCounts = await Promise.all(
       (posts || []).map(async (p) => {
         const { count: c } = await db
           .from("comments")
           .select("*", { count: "exact", head: true })
           .eq("post_id", p.id);
+
         return { ...p, commentCount: c || 0 };
       })
     );
@@ -393,10 +426,9 @@ h1 {
         window.location.href = `view.html?id=${p.id}`;
       };
 
-      const commentLabel =
-        p.commentCount > 0
-          ? ` <span style="color:#3B82F6; font-weight:600;">(${p.commentCount})</span>`
-          : "";
+      const commentLabel = p.commentCount
+        ? ` <span style="color:#3B82F6; font-weight:600;">(${p.commentCount})</span>`
+        : "";
 
       div.innerHTML = `
         <div class="post-title">🔒 ${p.school} - ${p.name}${commentLabel}</div>
@@ -410,12 +442,11 @@ h1 {
     renderPagination();
   }
 
-  // ===== 페이지네이션 =====
   function renderPagination() {
     const box = document.getElementById("pagination");
     box.innerHTML = "";
 
-    if (totalPages <= 1) return;
+    if (!totalPages || totalPages <= 1) return;
 
     for (let i = 1; i <= totalPages; i++) {
       const btn = document.createElement("button");
@@ -426,10 +457,7 @@ h1 {
     }
   }
 
-  // 초기 로딩
   loadPosts(1);
 </script>
-
-
 </body>
 </html>
