@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>평내 에듀플렉스 과제제출</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>평내 에듀플렉스 과제제출</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
+<style>
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
-input,
-textarea,
-select {
+
+input, textarea, select {
   width: 100%;
   max-width: 100%;
   border-radius: 10px;
@@ -23,328 +22,326 @@ select {
   padding: 10px;
   display: block;
 }
-    body {
-      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont;
-      background: #eef2ff;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-    }
-    .container {
-      width: 100%;
-      max-width: 750px;
-      background: #fff;
-      padding: 30px 35px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.08);
-    }
-    h1 {
-      margin: 0;
-      text-align: center;
-      font-size: 26px;
-      font-weight: 700;
-    }
-    .subtitle {
-      font-size: 14px;
-      text-align: center;
-      color: #6b7280;
-      margin-top: 5px;
-      margin-bottom: 15px;
-    }
-    .notice-box {
-      background:#fff7d6;
-      border:1px solid #facc15;
-      padding:14px 16px 10px;
-      border-radius:14px;
-      margin-top:25px;
-      margin-bottom:20px;
-      font-size:14px;
-      line-height:1.5;
-    }
-    .notice-header {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:6px;
-    }
-    .notice-title {
-      font-size:15px;
-      font-weight:700;
-    }
-    .notice-toggle-btn {
-      border:none;
-      background:transparent;
-      font-size:12px;
-      color:#92400e;
-      cursor:pointer;
-      padding:4px 8px;
-      border-radius:8px;
-    }
-    .notice-content {
-      margin-top:4px;
-    }
-    .button-main {
-      padding: 12px 18px;
-      border-radius: 10px;
-      background: #4f46e5;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 15px;
-    }
-    .form {
-      margin-top: 20px;
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-    }
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #d4d4d8;
-      font-size: 14px;
-    }
-    textarea {
-      height: 120px;
-      resize: none;
-    }
-    .post-card {
-      background: #f9fafb;
-      padding: 15px 18px;
-      border-radius: 14px;
-      border: 1px solid #e5e7eb;
-      margin-bottom: 12px;
-      cursor: pointer;
-    }
-    .post-title {
-      font-weight: 600;
-      font-size: 15px;
-    }
-    .post-meta {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-    .pagination {
-      margin-top: 16px;
-      text-align: center;
-    }
-    .page-btn {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 8px;
-      margin: 0 3px;
-      border: 1px solid #e5e7eb;
-      font-size: 13px;
-      cursor: pointer;
-      background: #ffffff;
-    }
-    .page-btn.active {
-      background: #4f46e5;
-      color: #ffffff;
-      border-color: #4f46e5;
-    }
-  </style>
+
+body {
+  font-family: 'Pretendard', sans-serif;
+  background: #eef2ff;
+  margin: 0;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 750px;
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.06);
+}
+
+h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.button-main {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #4f46e5;
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 10px 0;
+}
+
+.post-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 15px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.post-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.post-meta {
+  color: #6b7280;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  margin: 0 4px;
+  cursor: pointer;
+}
+
+.page-btn.active {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+}
+
+.notice-box {
+  background: #fff8e1;
+  border: 1px solid #fddc9e;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.notice-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+#formBox {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 16px;
+  margin-top: 16px;
+}
+
+</style>
 </head>
 
 <body>
 <div class="container">
+
   <h1>평내 에듀플렉스 과제제출</h1>
-  <p class="subtitle">과제를 제출하고 제출된 목록을 확인할 수 있어요.</p>
+  <p style="color:#6b7280; margin-bottom:20px;">
+    과제를 제출하고 제출된 목록을 확인할 수 있어요.
+  </p>
 
   <!-- 공지사항 -->
-  <div id="noticeBox" class="notice-box">
+  <div class="notice-box">
     <div class="notice-header">
-      <div class="notice-title">📢 공지사항</div>
-      <button id="toggleNoticeBtn" class="notice-toggle-btn">닫기 ▲</button>
+      <span>📢 공지사항</span>
+      <button id="toggleNoticeBtn" style="border:none;background:none;cursor:pointer;font-size:14px;">닫기 ▲</button>
     </div>
-    <div id="noticeContent" class="notice-content">
-      <br>
-      이 페이지는 <b>에듀플렉스 상담관리 과제 제출만을 위한 공간</b>입니다.<br><br>
-      작성 예시<br>
-      ● 역사 개념 암기 완료<br>
-      ● 영어 본문 2줄 구문 분석 완료<br>
-      ● 수학 문제풀이 및 오답 정리 완료<br>
-      <b>※ 학습 교재 사진 첨부 필수</b><br><br>
-      <b style="color:#d97706;">업로드한 사진은 24시간 후 자동 삭제됩니다.</b>
+
+    <div id="noticeContent" style="margin-top:10px;">
+      ● 역사 개념 암기 완료 <br>
+      ● 영어 본문 2줄 구문 분석 완료 <br>
+      ● 수학 문제풀이 및 오답 정리 완료 <br>
+      ※ 학습 교재 사진 첨부 필수<br><br>
+      업로드한 사진은 24시간 후 자동 삭제됩니다.
     </div>
   </div>
 
   <button class="button-main" id="openFormBtn">과제 제출하기</button>
 
-  <!-- 글쓰기 폼 -->
-  <div class="form" id="formBox">
-    <input id="school" placeholder="학교/학년 (예: 에듀중2)">
-    <input id="name" placeholder="이름">
-
+  <!-- 제출 폼 -->
+  <div id="formBox">
+    <input id="school" placeholder="학교 (예: 평내고1)">
+    <input id="name" placeholder="이름 (예: 이나영)">
     <select id="manager">
       <option value="">담당 매니저 선택</option>
-      <option value="김예실M">김예실M</option>
-      <option value="박제민M">박제민M</option>
+      <option>김예실M</option>
+      <option>박제민M</option>
     </select>
-
     <textarea id="content" placeholder="전달 내용을 입력하세요"></textarea>
-
-    <input id="postPassword" type="password" maxlength="4" placeholder="조회 비밀번호 4자리">
-
-    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+    <input id="postPassword" maxlength="4" placeholder="조회 비밀번호 4자리">
+    <input type="file" id="fileInput" multiple>
     <button class="button-main" id="submitPost">제출하기</button>
   </div>
 
-  <!-- 🔍 검색창 -->
-  <input id="searchInput" placeholder="학생 이름 검색 (예: 김에듀)"
-         style="width:100%; padding:10px; margin:20px 0; border-radius:10px; border:1px solid #d4d4d8;">
+  <!-- 검색 -->
+  <input id="searchName" placeholder="학생 이름 검색 (예: 김예듀)" style="margin-top:25px;">
 
-  <h2>📌 제출된 과제 목록</h2>
+  <!-- 목록 -->
+  <h2 style="margin-top:28px; font-size:20px;">📌 제출된 과제 목록</h2>
+
   <div id="postList"></div>
-  <div id="pagination" class="pagination"></div>
+
+  <div id="pagination" style="margin-top:12px;"></div>
+
 </div>
 
 <script>
-  const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";   
-  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
 
-  const PAGE_SIZE = 10;
-  let currentPage = 1;
-  let totalPages = 1;
-  let searchKeyword = "";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PAGE_SIZE = 10;
 
-  /* 공지 열기/닫기 */
-  const noticeContent = document.getElementById("noticeContent");
-  const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
-  let collapsed = localStorage.getItem("noticeCollapsed") === "1";
-  function updateNotice() {
-    noticeContent.style.display = collapsed ? "none" : "block";
-    toggleNoticeBtn.textContent = collapsed ? "열기 ▼" : "닫기 ▲";
+let currentPage = 1;
+let totalPages = 1;
+let currentSearchName = "";
+
+/* 공지 토글 */
+const noticeContent = document.getElementById("noticeContent");
+const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
+let collapsed = localStorage.getItem("noticeCollapsed") === "1";
+
+function updateNotice() {
+  if (collapsed) {
+    noticeContent.style.display = "none";
+    toggleNoticeBtn.textContent = "열기 ▼";
+  } else {
+    noticeContent.style.display = "block";
+    toggleNoticeBtn.textContent = "닫기 ▲";
   }
-  toggleNoticeBtn.onclick = () => {
-    collapsed = !collapsed;
-    localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
-    updateNotice();
-  };
+}
+toggleNoticeBtn.onclick = () => {
+  collapsed = !collapsed;
+  localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
   updateNotice();
+};
+updateNotice();
 
-  document.getElementById("openFormBtn").onclick = () => {
-    const box = document.getElementById("formBox");
-    box.style.display = box.style.display === "flex" ? "none" : "flex";
-  };
+/* 폼 열기 */
+document.getElementById("openFormBtn").onclick = () => {
+  const box = document.getElementById("formBox");
+  box.style.display = box.style.display === "flex" ? "none" : "flex";
+};
 
-  /* 검색 */
-  document.getElementById("searchInput").oninput = (e) => {
-    searchKeyword = e.target.value.trim();
-    loadPosts(1);
-  };
+/* 검색 */
+document.getElementById("searchName").addEventListener("input", () => {
+  currentSearchName = searchName.value.trim();
+  loadPosts(1);
+});
 
-  /* 제출 */
-  document.getElementById("submitPost").onclick = async () => {
-    const school = school.value.trim();
-    const name = document.getElementById("name").value.trim();
-    const manager = document.getElementById("manager").value.trim();
-    const content = document.getElementById("content").value.trim();
-    const password = postPassword.value.trim();
-    const files = [...fileInput.files];
 
-    if (!school || !name || !manager || !content) {
-      alert("모든 내용을 입력하세요!");
-      return;
-    }
-    if (!password || password.length !== 4) {
-      alert("조회 비밀번호 4자리를 입력하세요!");
-      return;
-    }
+/* 제출 버튼 */
+document.getElementById("submitPost").onclick = async () => {
+  const school = school.value.trim();
+  const name = name.value.trim();
+  const manager = manager.value.trim();
+  const content = content.value.trim();
+  const password = postPassword.value.trim();
+  const files = [...fileInput.files];
 
-    const urls = [];
-    for (const file of files) {
-      const ext = file.name.split(".").pop();
-      const path = `homework/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data: up } = await db.storage.from("uploads").upload(path, file);
-      const { data: pub } = db.storage.from("uploads").getPublicUrl(up.path);
-      urls.push(pub.publicUrl);
-    }
-
-    await db.from("posts").insert({
-      school, name, manager, content,
-      file_url: JSON.stringify(urls),
-      password
-    });
-
-    alert("제출 완료!");
-    formBox.style.display = "none";
-    school.value = "";
-    name.value = "";
-    manager.value = "";
-    content.value = "";
-    postPassword.value = "";
-    fileInput.value = "";
-
-    loadPosts(1);
-  };
-
-  /* 목록 + 검색 */
-  async function loadPosts(page = 1) {
-    currentPage = page;
-    const from = (page - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    let query = db.from("posts")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
-
-    if (searchKeyword) {
-      query = query.ilike("name", `%${searchKeyword}%`);
-    }
-
-    const { data: posts, count } = await query.range(from, to);
-    totalPages = Math.ceil((count || 0) / PAGE_SIZE);
-
-    const postsWithCounts = await Promise.all(
-      (posts || []).map(async (p) => {
-        const { count: c } = await db
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", p.id);
-        return { ...p, commentCount: c };
-      })
-    );
-
-    const box = postList;
-    box.innerHTML = "";
-
-    postsWithCounts.forEach((p) => {
-      const div = document.createElement("div");
-      div.className = "post-card";
-      div.onclick = () => location.href = `view.html?id=${p.id}`;
-
-      const commentLabel = p.commentCount
-        ? ` <span style="color:#3B82F6;">(${p.commentCount})</span>` : "";
-
-      div.innerHTML = `
-        <div class="post-title">🔒 ${p.school} - ${p.name}${commentLabel}</div>
-        <div class="post-meta">${p.manager} · ${new Date(p.created_at).toLocaleString()}</div>`;
-      box.appendChild(div);
-    });
-
-    renderPagination();
+  if (!school || !name || !manager || !content) {
+    alert("모든 내용을 입력해주세요!");
+    return;
   }
 
-  function renderPagination() {
-    pagination.innerHTML = "";
-    for (let i = 1; i <= totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i;
-      btn.className = "page-btn" + (i === currentPage ? " active" : "");
-      btn.onclick = () => loadPosts(i);
-      pagination.appendChild(btn);
-    }
+  if (!password || password.length !== 4) {
+    alert("조회 비밀번호 4자리를 입력해주세요!");
+    return;
   }
+
+  let urls = [];
+  for (const file of files) {
+    const ext = file.name.split(".").pop();
+    const path = "homework/" + Date.now() + "_" +
+      Math.random().toString(36).slice(2) + "." + ext;
+
+    const { data: up, error: upErr } = await db.storage
+      .from("uploads")
+      .upload(path, file);
+
+    if (upErr) {
+      alert("업로드 실패: " + upErr.message);
+      return;
+    }
+
+    const { data: pub } = db.storage.from("uploads").getPublicUrl(up.path);
+    urls.push(pub.publicUrl);
+  }
+
+  const { error } = await db.from("posts").insert({
+    school,
+    name,
+    manager,
+    content,
+    password,
+    file_url: JSON.stringify(urls)
+  });
+
+  if (error) {
+    alert("저장 오류: " + error.message);
+    return;
+  }
+
+  alert("제출 완료!");
+
+  formBox.style.display = "none";
+  school.value = "";
+  name.value = "";
+  manager.value = "";
+  content.value = "";
+  postPassword.value = "";
+  fileInput.value = "";
 
   loadPosts(1);
+};
+
+/* 글 목록 */
+async function loadPosts(page = 1) {
+  currentPage = page;
+
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  let query = db
+    .from("posts")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (currentSearchName) {
+    query = query.ilike("name", "%" + currentSearchName + "%");
+  }
+
+  const { data: posts, count } = await query;
+  totalPages = Math.ceil((count || 0) / PAGE_SIZE);
+
+  const postList = document.getElementById("postList");
+  postList.innerHTML = "";
+
+  posts.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "post-card";
+    div.onclick = () => location.href = `view.html?id=${p.id}`;
+
+    div.innerHTML = `
+      <div class="post-title">🔒 ${p.school} - ${p.name}</div>
+      <div class="post-meta">${p.manager} · ${new Date(p.created_at).toLocaleString()}</div>
+    `;
+    postList.appendChild(div);
+  });
+
+  renderPagination();
+}
+
+/* 페이징 */
+function renderPagination() {
+  const box = document.getElementById("pagination");
+  box.innerHTML = "";
+
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = "page-btn" + (i === currentPage ? " active" : "");
+    btn.onclick = () => loadPosts(i);
+    box.appendChild(btn);
+  }
+}
+
+loadPosts(1);
 </script>
+
 </body>
 </html>
