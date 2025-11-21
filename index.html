@@ -176,172 +176,260 @@ h1 {
 </div>
 
 <script>
-const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-const SUPABASE_ANON_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
+  const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const PAGE_SIZE = 10;
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let currentPage = 1;
-let totalPages = 1;
-let currentSearchName = "";
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentSearchName = "";
 
-/* 공지 토글 */
-const noticeContent = document.getElementById("noticeContent");
-const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
-let collapsed = localStorage.getItem("noticeCollapsed") === "1";
+  const ENABLE_EMAIL = true;
+  const FUNCTION_URL =
+    "https://kxbyfldxcrdegnfmzgrm.supabase.co/functions/v1/new-post-email";
 
-function updateNotice() {
-  if (collapsed) {
-    noticeContent.style.display = "none";
-    toggleNoticeBtn.textContent = "열기 ▼";
-  } else {
-    noticeContent.style.display = "block";
-    toggleNoticeBtn.textContent = "닫기 ▲";
+  async function sendEmail(info) {
+    try {
+      await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify(info),
+      });
+    } catch (e) {
+      console.log("이메일 전송 오류(무시 가능)", e);
+    }
   }
-}
-toggleNoticeBtn.onclick = () => {
-  collapsed = !collapsed;
-  localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
+
+  // ===== 공지 토글 =====
+  const noticeContent = document.getElementById("noticeContent");
+  const toggleNoticeBtn = document.getElementById("toggleNoticeBtn");
+
+  let collapsed = localStorage.getItem("noticeCollapsed") === "1";
+
+  function updateNotice() {
+    if (collapsed) {
+      noticeContent.style.display = "none";
+      toggleNoticeBtn.textContent = "열기 ▼";
+    } else {
+      noticeContent.style.display = "block";
+      toggleNoticeBtn.textContent = "닫기 ▲";
+    }
+  }
+
+  toggleNoticeBtn.onclick = () => {
+    collapsed = !collapsed;
+    localStorage.setItem("noticeCollapsed", collapsed ? "1" : "0");
+    updateNotice();
+  };
   updateNotice();
-};
-updateNotice();
 
-/* 폼 열기 */
-document.getElementById("openFormBtn").onclick = () => {
-  const box = document.getElementById("formBox");
-  box.style.display = box.style.display === "flex" ? "none" : "flex";
-};
+  // ===== 폼 열기/닫기 =====
+  document.getElementById("openFormBtn").onclick = () => {
+    const box = document.getElementById("formBox");
+    box.style.display = box.style.display === "flex" ? "none" : "flex";
+  };
 
-/* 검색 */
-document.getElementById("searchName").addEventListener("input", () => {
-  currentSearchName = searchName.value.trim();
-  loadPosts(1);
-});
-
-
-/* 제출 버튼 */
-document.getElementById("submitPost").onclick = async () => {
-  const school = school.value.trim();
-  const name = name.value.trim();
-  const manager = manager.value.trim();
-  const content = content.value.trim();
-  const password = postPassword.value.trim();
-  const files = [...fileInput.files];
-
-  if (!school || !name || !manager || !content) {
-    alert("모든 내용을 입력해주세요!");
-    return;
+  // ===== 학생 이름 검색 =====
+  const searchInput = document.getElementById("searchName");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      currentSearchName = searchInput.value.trim();
+      loadPosts(1);
+    });
   }
 
-  if (!password || password.length !== 4) {
-    alert("조회 비밀번호 4자리를 입력해주세요!");
-    return;
-  }
+  // ===== 과제 제출하기 버튼 =====
+  document.getElementById("submitPost").onclick = async () => {
+    // 1) 요소 가져오기
+    const schoolInput   = document.getElementById("school");
+    const nameInput     = document.getElementById("name");
+    const managerSelect = document.getElementById("manager");
+    const contentInput  = document.getElementById("content");
+    const pwInput       = document.getElementById("postPassword");
+    const fileInput     = document.getElementById("fileInput");
 
-  let urls = [];
-  for (const file of files) {
-    const ext = file.name.split(".").pop();
-    const path = "homework/" + Date.now() + "_" +
-      Math.random().toString(36).slice(2) + "." + ext;
+    // 2) 값 읽기
+    const school  = schoolInput.value.trim();
+    const name    = nameInput.value.trim();
+    const manager = managerSelect.value.trim();
+    const content = contentInput.value.trim();
+    const password = pwInput.value.trim();
+    const files   = [...fileInput.files];
 
-    const { data: up, error: upErr } = await db.storage
-      .from("uploads")
-      .upload(path, file);
-
-    if (upErr) {
-      alert("업로드 실패: " + upErr.message);
+    // 3) 유효성 검사
+    if (!school || !name || !manager || !content) {
+      alert("모든 내용을 입력해주세요!");
       return;
     }
 
-    const { data: pub } = db.storage.from("uploads").getPublicUrl(up.path);
-    urls.push(pub.publicUrl);
+    if (!password || password.length !== 4) {
+      alert("조회 비밀번호 4자리를 입력해주세요!");
+      return;
+    }
+
+    // (필요하면 사진 필수로 바꾸고 싶을 때)
+    // if (files.length === 0) {
+    //   alert("학습 교재 사진을 최소 1장 첨부해주세요!");
+    //   return;
+    // }
+
+    // 4) 파일 업로드
+    const urls = [];
+    for (const file of files) {
+      const ext = file.name.split(".").pop();
+      const path =
+        "homework/" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).slice(2) +
+        "." +
+        ext;
+
+      const { data: up, error: upErr } = await db.storage
+        .from("uploads")
+        .upload(path, file);
+
+      if (upErr) {
+        console.error(upErr);
+        alert("파일 업로드 실패: " + upErr.message);
+        return;
+      }
+
+      const { data: pub } = db.storage
+        .from("uploads")
+        .getPublicUrl(up.path);
+
+      urls.push(pub.publicUrl);
+    }
+
+    // 5) DB 저장
+    const { error } = await db.from("posts").insert({
+      school,
+      name,
+      manager,
+      content,
+      file_url: JSON.stringify(urls),
+      password,
+    });
+
+    if (error) {
+      console.error(error);
+      alert("저장 오류: " + error.message);
+      return;
+    }
+
+    // 6) 이메일 알림
+    if (ENABLE_EMAIL) {
+      sendEmail({ school, name, manager });
+    }
+
+    alert("제출 완료!");
+
+    // 7) 폼 초기화
+    document.getElementById("formBox").style.display = "none";
+    schoolInput.value = "";
+    nameInput.value = "";
+    managerSelect.value = "";
+    contentInput.value = "";
+    pwInput.value = "";
+    fileInput.value = "";
+
+    // 8) 목록 새로고침
+    loadPosts(1);
+  };
+
+  // ===== 글 목록 불러오기 (+ 댓글 수) =====
+  async function loadPosts(page = 1) {
+    currentPage = page;
+
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = db
+      .from("posts")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (currentSearchName) {
+      query = query.ilike("name", "%" + currentSearchName + "%");
+    }
+
+    const { data: posts, count, error } = await query;
+
+    if (error) {
+      console.error(error);
+      alert("목록 불러오기 오류가 발생했습니다.");
+      return;
+    }
+
+    totalPages = Math.ceil((count || 0) / PAGE_SIZE);
+
+    // 댓글 수 합치기
+    const postsWithCounts = await Promise.all(
+      (posts || []).map(async (p) => {
+        const { count: c } = await db
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", p.id);
+        return { ...p, commentCount: c || 0 };
+      })
+    );
+
+    const box = document.getElementById("postList");
+    box.innerHTML = "";
+
+    postsWithCounts.forEach((p) => {
+      const div = document.createElement("div");
+      div.className = "post-card";
+      div.onclick = () => {
+        window.location.href = `view.html?id=${p.id}`;
+      };
+
+      const commentLabel =
+        p.commentCount > 0
+          ? ` <span style="color:#3B82F6; font-weight:600;">(${p.commentCount})</span>`
+          : "";
+
+      div.innerHTML = `
+        <div class="post-title">🔒 ${p.school} - ${p.name}${commentLabel}</div>
+        <div class="post-meta">${p.manager} · ${new Date(
+          p.created_at
+        ).toLocaleString()}</div>
+      `;
+      box.appendChild(div);
+    });
+
+    renderPagination();
   }
 
-  const { error } = await db.from("posts").insert({
-    school,
-    name,
-    manager,
-    content,
-    password,
-    file_url: JSON.stringify(urls)
-  });
+  // ===== 페이지네이션 =====
+  function renderPagination() {
+    const box = document.getElementById("pagination");
+    box.innerHTML = "";
 
-  if (error) {
-    alert("저장 오류: " + error.message);
-    return;
+    if (totalPages <= 1) return;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = "page-btn" + (i === currentPage ? " active" : "");
+      btn.onclick = () => loadPosts(i);
+      box.appendChild(btn);
+    }
   }
 
-  alert("제출 완료!");
-
-  formBox.style.display = "none";
-  school.value = "";
-  name.value = "";
-  manager.value = "";
-  content.value = "";
-  postPassword.value = "";
-  fileInput.value = "";
-
+  // 초기 로딩
   loadPosts(1);
-};
-
-/* 글 목록 */
-async function loadPosts(page = 1) {
-  currentPage = page;
-
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-
-  let query = db
-    .from("posts")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, to);
-
-  if (currentSearchName) {
-    query = query.ilike("name", "%" + currentSearchName + "%");
-  }
-
-  const { data: posts, count } = await query;
-  totalPages = Math.ceil((count || 0) / PAGE_SIZE);
-
-  const postList = document.getElementById("postList");
-  postList.innerHTML = "";
-
-  posts.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "post-card";
-    div.onclick = () => location.href = `view.html?id=${p.id}`;
-
-    div.innerHTML = `
-      <div class="post-title">🔒 ${p.school} - ${p.name}</div>
-      <div class="post-meta">${p.manager} · ${new Date(p.created_at).toLocaleString()}</div>
-    `;
-    postList.appendChild(div);
-  });
-
-  renderPagination();
-}
-
-/* 페이징 */
-function renderPagination() {
-  const box = document.getElementById("pagination");
-  box.innerHTML = "";
-
-  if (totalPages <= 1) return;
-
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.className = "page-btn" + (i === currentPage ? " active" : "");
-    btn.onclick = () => loadPosts(i);
-    box.appendChild(btn);
-  }
-}
-
-loadPosts(1);
 </script>
+
 
 </body>
 </html>
