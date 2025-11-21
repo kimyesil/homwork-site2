@@ -24,9 +24,9 @@
   flex: 0 0 auto;
   width: 250px;
   border-radius: 12px;
+  cursor: pointer;
 }
 
-/* 전체 레이아웃 */
 body {
   font-family: 'Pretendard', sans-serif;
   background: #eef2ff;
@@ -88,16 +88,8 @@ h1 {
 .file-box {
   margin-top: 18px;
 }
-.file-scroll img,
-.file-scroll video {
-  width: 250px;
-  border-radius: 12px;
-  margin-top: 10px;
-  flex: 0 0 auto;
-  display: block;
-}
 
-/* 댓글 영역 */
+/* 댓글 */
 .comment-section {
   margin-top: 30px;
 }
@@ -117,7 +109,6 @@ h1 {
   font-size: 14px;
 }
 
-/* 댓글 수정/삭제 버튼 */
 .comment-actions {
   margin-top: 6px;
   text-align: right;
@@ -156,6 +147,7 @@ textarea {
   height: 80px;
   resize: none;
 }
+
 .button-main {
   margin-top: 10px;
   padding: 12px 18px;
@@ -182,7 +174,7 @@ textarea {
   font-size: 14px;
 }
 
-/* 🔍 이미지 확대 모달 */
+/* 🔍 이미지 확대 모달 + 슬라이드 */
 .image-modal {
   position: fixed;
   inset: 0;
@@ -203,8 +195,31 @@ textarea {
   top: 18px;
   right: 22px;
   color: #fff;
-  font-size: 26px;
+  font-size: 28px;
   cursor: pointer;
+}
+
+/* 슬라이드 화살표 */
+.slide-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 48px;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.35);
+}
+.slide-arrow:hover {
+  background: rgba(0,0,0,0.55);
+}
+.slide-arrow.left {
+  left: 20px;
+}
+.slide-arrow.right {
+  right: 20px;
 }
 </style>
 </head>
@@ -215,26 +230,24 @@ textarea {
   <h1>과제 상세보기</h1>
   <div class="meta" id="postMeta">불러오는 중...</div>
 
-  <!-- 🔐 비밀번호 입력 박스 -->
+  <!-- 🔐 비밀번호 입력 -->
   <div id="passwordBox" class="password-box" style="display:none;">
-    <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.<br>
-    글 작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해주세요.</p>
-    <input id="inputPassword" class="password-input" type="password" maxlength="4"
-           placeholder="조회 비밀번호 4자리">
-    <button class="button-main" id="checkPwBtn" style="margin-top:10px;">확인</button>
+    <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.</p>
+    <input id="inputPassword" class="password-input" type="password" maxlength="4" placeholder="조회 비밀번호">
+    <button class="button-main" id="checkPwBtn">확인</button>
   </div>
 
-  <!-- 내용/파일 영역 (처음엔 잠금 처리) -->
+  <!-- 본문 -->
   <div class="content-box" id="postContent" style="display:none;"></div>
+
+  <!-- 첨부 -->
   <div class="file-box" id="fileBox" style="display:none;"></div>
 
-  <!-- 삭제 버튼 -->
   <button class="button-main delete-btn" id="deleteBtn">글 삭제하기</button>
 
-  <!-- 댓글 영역 -->
+  <!-- 댓글 -->
   <div class="comment-section" id="commentSection" style="display:none;">
     <h2 style="font-size:18px;margin-bottom:10px;">💬 댓글</h2>
-
     <div id="commentList"></div>
 
     <input id="commentName" placeholder="이름">
@@ -247,37 +260,34 @@ textarea {
   </div>
 </div>
 
-<!-- 🔍 이미지 확대 모달 -->
+<!-- 🔍 이미지 모달 -->
 <div id="imageModal" class="image-modal" onclick="closeImageModal()">
   <span class="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">×</span>
-  <img id="modalImage" class="image-modal-img" src="" alt="확대 이미지">
+
+  <div class="slide-arrow left" onclick="prevImage(event)">&#10094;</div>
+  <img id="modalImage" class="image-modal-img" src="">
+  <div class="slide-arrow right" onclick="nextImage(event)">&#10095;</div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
+const SUPABASE_ANON_KEY = "YOUR_KEY";
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// URL에서 post id
 const postId = new URLSearchParams(window.location.search).get("id");
-
-// 🔐 관리자 마스터 비번
 const MASTER_PASSWORD = "3208";
 
-// 이 글의 저장된 비밀번호
 let postPassword = "";
+let imageList = [];
+let currentIndex = 0;
 
-// 게시글 불러오기
+/* ----------------------- 게시글 로딩 ----------------------- */
 async function loadPost() {
-  const { data, error } = await db
-    .from("posts")
-    .select("*")
-    .eq("id", postId)
-    .single();
+  const { data } = await db.from("posts").select("*").eq("id", postId).single();
 
-  if (!data || error) {
-    document.getElementById("postMeta").textContent = "게시글을 찾을 수 없습니다.";
+  if (!data) {
+    document.getElementById("postMeta").textContent = "글을 찾을 수 없습니다.";
     return;
   }
 
@@ -287,76 +297,36 @@ async function loadPost() {
   document.getElementById("postContent").textContent = data.content || "";
   postPassword = data.password || "";
 
-  // 첨부파일 표시
+  /* 이미지/파일 표시 */
   const box = document.getElementById("fileBox");
   box.innerHTML = "";
 
   if (data.file_url) {
-    let urls = [];
-
     try {
-      const parsed = JSON.parse(data.file_url);
-      if (Array.isArray(parsed)) urls = parsed;
-      else if (typeof parsed === "string") urls = [parsed];
+      imageList = JSON.parse(data.file_url);
     } catch {
-      urls = [data.file_url];
+      imageList = [data.file_url];
     }
 
-    const scrollBox = document.createElement("div");
-    scrollBox.className = "file-scroll";
+    const scroll = document.createElement("div");
+    scroll.className = "file-scroll";
 
-    urls.forEach((u) => {
-      const urlLower = u.toLowerCase();
-
-      if (
-        urlLower.endsWith(".jpg") ||
-        urlLower.endsWith(".jpeg") ||
-        urlLower.endsWith(".png") ||
-        urlLower.endsWith(".gif") ||
-        urlLower.endsWith(".webp")
-      ) {
-        const img = document.createElement("img");
-        img.src = u;
-        img.className = "file-item";
-        img.style.cursor = "pointer";
-        img.onclick = () => openImageModal(u);
-        scrollBox.appendChild(img);
-      } else if (
-        urlLower.endsWith(".mp4") ||
-        urlLower.endsWith(".mov") ||
-        urlLower.endsWith(".avi")
-      ) {
-        const video = document.createElement("video");
-        video.src = u;
-        video.controls = true;
-        video.className = "file-item";
-        scrollBox.appendChild(video);
-      } else {
-        const a = document.createElement("a");
-        a.href = u;
-        a.target = "_blank";
-        a.textContent = "첨부파일 열기";
-        a.style.flex = "0 0 auto";
-        a.style.marginTop = "10px";
-        scrollBox.appendChild(a);
-      }
+    imageList.forEach((u, idx) => {
+      const item = document.createElement("img");
+      item.src = u;
+      item.className = "file-item";
+      item.onclick = () => openImageModal(idx);
+      scroll.appendChild(item);
     });
 
-    box.appendChild(scrollBox);
+    box.appendChild(scroll);
   }
 
-  // 비밀번호 유무에 따라 잠금 처리
   if (postPassword) {
     document.getElementById("passwordBox").style.display = "block";
-    document.getElementById("postContent").style.display = "none";
-    document.getElementById("fileBox").style.display = "none";
-    document.getElementById("commentSection").style.display = "none";
-  } else {
-    unlockView();
-  }
+  } else unlockView();
 }
 
-// 🔓 잠금 해제
 function unlockView() {
   document.getElementById("passwordBox").style.display = "none";
   document.getElementById("postContent").style.display = "block";
@@ -364,29 +334,19 @@ function unlockView() {
   document.getElementById("commentSection").style.display = "block";
 }
 
-// 비밀번호 확인 버튼
 document.getElementById("checkPwBtn").onclick = () => {
-  const inputPw = document.getElementById("inputPassword").value.trim();
-
-  if (!inputPw) {
-    alert("비밀번호를 입력해주세요!");
-    return;
-  }
-
-  if (inputPw === postPassword || inputPw === MASTER_PASSWORD) {
+  const pw = document.getElementById("inputPassword").value.trim();
+  if (pw === postPassword || pw === MASTER_PASSWORD) {
     unlockView();
-  } else {
-    alert("비밀번호가 틀렸습니다!");
-  }
+  } else alert("비밀번호가 틀렸습니다!");
 };
 
-// 댓글 불러오기
+/* ----------------------- 댓글 ----------------------- */
 async function loadComments() {
-  const { data } = await db
-    .from("comments")
+  const { data } = await db.from("comments")
     .select("*")
     .eq("post_id", postId)
-    .order("created_at", { ascending: true });
+    .order("created_at");
 
   const box = document.getElementById("commentList");
   box.innerHTML = "";
@@ -396,7 +356,7 @@ async function loadComments() {
     div.className = "comment-card";
     div.innerHTML = `
       <div class="comment-meta">${c.name} · ${new Date(c.created_at).toLocaleString()}</div>
-      <div class="comment-text" id="comment-text-${c.id}">${c.text}</div>
+      <div class="comment-text" id="c${c.id}">${c.text}</div>
       <div class="comment-actions">
         <button class="comment-btn" onclick="editComment('${c.id}')">수정</button>
         <button class="comment-btn delete" onclick="deleteComment('${c.id}')">삭제</button>
@@ -406,122 +366,68 @@ async function loadComments() {
   });
 }
 
-// 댓글 작성
 document.getElementById("commentBtn").onclick = async () => {
-  const name = document.getElementById("commentName").value.trim();
-  const text = document.getElementById("commentText").value.trim();
+  const name = commentName.value.trim();
+  const text = commentText.value.trim();
 
-  if (!name || !text) {
-    alert("이름과 댓글 내용을 입력해주세요!");
-    return;
-  }
+  if (!name || !text) return alert("입력해주세요!");
 
-  const { error } = await db.from("comments").insert({
-    post_id: postId,
-    name,
-    text
-  });
-
-  if (!error) {
-    document.getElementById("commentName").value = "";
-    document.getElementById("commentText").value = "";
-    loadComments();
-  } else {
-    alert("댓글 저장 중 오류가 발생했습니다.");
-  }
+  await db.from("comments").insert({ post_id: postId, name, text });
+  commentName.value = "";
+  commentText.value = "";
+  loadComments();
 };
 
-// 🔧 댓글 수정
 async function editComment(id) {
-  const textEl = document.getElementById(`comment-text-${id}`);
-  if (!textEl) return;
+  const old = document.getElementById("c" + id).textContent;
+  const input = prompt("수정하기", old);
+  if (input === null) return;
 
-  const current = textEl.textContent;
-  const updated = prompt("수정할 댓글 내용을 입력하세요.", current);
-
-  if (updated === null) return; // 취소
-  if (!updated.trim()) {
-    alert("내용이 비어 있습니다.");
-    return;
-  }
-
-  const { error } = await db
-    .from("comments")
-    .update({ text: updated.trim() })
-    .eq("id", id);
-
-  if (error) {
-    alert("댓글 수정 중 오류가 발생했습니다.");
-  } else {
-    loadComments();
-  }
+  await db.from("comments").update({ text: input }).eq("id", id);
+  loadComments();
 }
 
-// 🗑 댓글 삭제
 async function deleteComment(id) {
-  if (!confirm("이 댓글을 삭제하시겠습니까?")) return;
-
-  const { error } = await db
-    .from("comments")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    alert("댓글 삭제 중 오류가 발생했습니다.");
-  } else {
-    loadComments();
-  }
+  if (!confirm("삭제하시겠습니까?")) return;
+  await db.from("comments").delete().eq("id", id);
+  loadComments();
 }
 
-// 글 삭제하기 (비밀번호 필요)
+/* ----------------------- 글 삭제 ----------------------- */
 document.getElementById("deleteBtn").onclick = async () => {
-  const pw = prompt("삭제를 위해 비밀번호를 입력하세요 (작성 비밀번호 또는 관리자 비밀번호):");
+  const pw = prompt("작성 비번 또는 관리자 비번 입력:");
 
-  if (!pw) {
-    alert("비밀번호를 입력해야 삭제할 수 있습니다.");
-    return;
-  }
+  if (!pw) return;
+  if (pw !== postPassword && pw !== MASTER_PASSWORD) return alert("비번 틀림!");
 
-  if (postPassword) {
-    if (pw !== postPassword && pw !== MASTER_PASSWORD) {
-      alert("비밀번호가 틀렸습니다!");
-      return;
-    }
-  } else {
-    if (pw !== MASTER_PASSWORD) {
-      alert("관리자 비밀번호가 아닙니다. 삭제할 수 없습니다.");
-      return;
-    }
-  }
+  if (!confirm("정말 삭제?")) return;
 
-  if (!confirm("정말 삭제하시겠습니까?")) return;
+  await db.from("posts").delete().eq("id", postId);
 
-  const { error } = await db
-    .from("posts")
-    .delete()
-    .eq("id", postId);
-
-  if (error) {
-    alert("삭제 중 오류가 발생했습니다.");
-  } else {
-    alert("삭제되었습니다.");
-    window.location.href = "index.html";
-  }
+  alert("삭제되었습니다.");
+  location.href = "index.html";
 };
 
-/* 🔍 이미지 확대 모달 열기/닫기 */
-function openImageModal(src) {
-  const modal = document.getElementById("imageModal");
-  const img = document.getElementById("modalImage");
-  img.src = src;
-  modal.style.display = "flex";
+/* ----------------------- 이미지 슬라이드 ----------------------- */
+function openImageModal(index) {
+  currentIndex = index;
+  modalImage.src = imageList[currentIndex];
+  imageModal.style.display = "flex";
 }
 function closeImageModal() {
-  const modal = document.getElementById("imageModal");
-  modal.style.display = "none";
+  imageModal.style.display = "none";
+}
+function prevImage(e) {
+  e.stopPropagation();
+  currentIndex = (currentIndex - 1 + imageList.length) % imageList.length;
+  modalImage.src = imageList[currentIndex];
+}
+function nextImage(e) {
+  e.stopPropagation();
+  currentIndex = (currentIndex + 1) % imageList.length;
+  modalImage.src = imageList[currentIndex];
 }
 
-// 초기 로딩
 loadPost();
 loadComments();
 </script>
