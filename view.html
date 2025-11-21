@@ -85,6 +85,30 @@ h1 {
 }
 
 /* 댓글 */
+.comment-input-box {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.comment-input-name {
+  width: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #d4d4d8;
+  font-size: 14px;
+}
+
+.comment-input-text {
+  flex: 1;
+  padding: 10px;
+  height: 80px;
+  border-radius: 10px;
+  border: 1px solid #d4d4d8;
+  font-size: 14px;
+  resize: none;
+}
+
 .comment-section {
   margin-top: 30px;
 }
@@ -137,8 +161,37 @@ h1 {
   width: 100%;
 }
 
-.delete-btn {
-  background: #ef4444 !important;
+/* 수정 / 삭제 버튼 정렬 */
+.edit-delete-box {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.small-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.small-btn:hover {
+  background: #d1d5db;
+}
+
+.small-btn.delete {
+  background: #fca5a5;
+  color: #7f1d1d;
+}
+
+.small-btn.delete:hover {
+  background: #f87171;
 }
 
 /* 뒤로가기 */
@@ -175,6 +228,33 @@ h1 {
   cursor: pointer;
 }
 
+/* 슬라이드 화살표 */
+.modal-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 32px;
+  color: #fff;
+  background: rgba(0,0,0,0.2);
+  border: none;
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-arrow:hover {
+  background: rgba(0,0,0,0.4);
+}
+.modal-arrow.prev {
+  left: 20px;
+}
+.modal-arrow.next {
+  right: 20px;
+}
+
 </style>
 </head>
 
@@ -187,7 +267,7 @@ h1 {
   <!-- 비밀번호 박스 -->
   <div id="passwordBox" class="password-box" style="display:none;">
     <p>🔐 이 글은 비밀번호가 있어야 열람할 수 있습니다.<br>
-    글 작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해주세요.</p>
+    글 작성 시 설정한 비밀번호를 입력해주세요.</p>
     <input id="inputPassword" class="password-input" type="password" maxlength="4" placeholder="조회 비밀번호 4자리">
     <button class="button-main" id="checkPwBtn">확인</button>
   </div>
@@ -196,16 +276,20 @@ h1 {
   <div class="file-box" id="fileBox" style="display:none;"></div>
 
   <!-- 글 수정 / 삭제 -->
-  <button class="button-main" id="editBtn">글 수정하기</button>
-  <button class="button-main delete-btn" id="deleteBtn">글 삭제하기</button>
+  <div class="edit-delete-box">
+    <button class="small-btn" id="editBtn">글 수정하기</button>
+    <button class="small-btn delete" id="deleteBtn">글 삭제하기</button>
+  </div>
 
   <!-- 댓글 -->
   <div class="comment-section" id="commentSection" style="display:none;">
     <h2 style="font-size:18px;">💬 댓글</h2>
     <div id="commentList"></div>
 
-    <input id="commentName" placeholder="이름">
-    <textarea id="commentText" placeholder="댓글 내용을 입력하세요"></textarea>
+    <div class="comment-input-box">
+      <input id="commentName" class="comment-input-name" placeholder="이름">
+      <textarea id="commentText" class="comment-input-text" placeholder="댓글 내용을 입력하세요"></textarea>
+    </div>
     <button class="button-main" id="commentBtn">댓글 달기</button>
   </div>
 
@@ -215,12 +299,14 @@ h1 {
 <!-- 이미지 모달 -->
 <div id="imageModal" class="image-modal" onclick="closeImageModal()">
   <span class="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">×</span>
+  <button type="button" class="modal-arrow prev" onclick="showPrevImage(event)">‹</button>
   <img id="modalImage" class="image-modal-img" src="">
+  <button type="button" class="modal-arrow next" onclick="showNextImage(event)">›</button>
 </div>
 
 <script>
 const SUPABASE_URL = "https://kxbyfldxcrdegnfmzgrm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";   
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4YnlmbGR4Y3JkZWduZm16Z3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU4MDMsImV4cCI6MjA3OTAyMTgwM30.Fj_TNEHxWnHY4TbmGEFzowUJp-5X9Gn7-0eynr8cVr4";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* 파라미터 */
@@ -229,6 +315,10 @@ const MASTER_PASSWORD = "3208";
 
 let postPassword = "";
 let editing = false;
+
+/* 이미지 슬라이드용 */
+let imageUrls = [];
+let currentImageIndex = 0;
 
 /* 게시글 로드 */
 async function loadPost() {
@@ -248,6 +338,7 @@ async function loadPost() {
   /* 파일 처리 */
   const box = fileBox;
   box.innerHTML = "";
+  imageUrls = [];
 
   if (data.file_url) {
     let urls = [];
@@ -262,11 +353,17 @@ async function loadPost() {
 
     urls.forEach((u) => {
       if (/\.(jpg|jpeg|png|gif|webp)$/i.test(u)) {
+        const imgIndex = imageUrls.length;
+        imageUrls.push(u);
+
         const img = document.createElement("img");
         img.src = u;
         img.className = "file-item";
         img.style.cursor = "pointer";
-        img.onclick = () => openImageModal(u);
+        img.onclick = (e) => {
+          e.stopPropagation();
+          openImageModal(imgIndex);
+        };
         scroll.appendChild(img);
       } else if (/\.(mp4|mov|avi)$/i.test(u)) {
         const video = document.createElement("video");
@@ -362,7 +459,7 @@ async function deleteComment(id) {
 
 /* 글 삭제 */
 deleteBtn.onclick = async () => {
-  const pw = prompt("작성 비밀번호 또는 관리자 비밀번호를 입력하세요");
+  const pw = prompt("작성 비밀번호를 입력하세요");
   if (!pw) return;
 
   if (pw !== postPassword && pw !== MASTER_PASSWORD) {
@@ -432,14 +529,44 @@ async function saveEdit() {
   location.reload();
 }
 
-/* 모달 */
-function openImageModal(src) {
-  modalImage.src = src;
+/* ---- 이미지 모달 + 슬라이드 ---- */
+
+function openImageModal(index) {
+  if (!imageUrls.length) return;
+  currentImageIndex = index;
+  modalImage.src = imageUrls[currentImageIndex];
   imageModal.style.display = "flex";
 }
+
 function closeImageModal() {
   imageModal.style.display = "none";
 }
+
+function showPrevImage(event) {
+  if (event) event.stopPropagation();
+  if (!imageUrls.length) return;
+  currentImageIndex = (currentImageIndex - 1 + imageUrls.length) % imageUrls.length;
+  modalImage.src = imageUrls[currentImageIndex];
+}
+
+function showNextImage(event) {
+  if (event) event.stopPropagation();
+  if (!imageUrls.length) return;
+  currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+  modalImage.src = imageUrls[currentImageIndex];
+}
+
+/* 키보드 방향키로도 슬라이드 */
+document.addEventListener("keydown", (e) => {
+  if (imageModal.style.display !== "flex") return;
+  if (e.key === "ArrowLeft") {
+    showPrevImage();
+  } else if (e.key === "ArrowRight") {
+    showNextImage();
+  } else if (e.key === "Escape") {
+    closeImageModal();
+  }
+});
 
 /* 초기 */
 loadPost();
