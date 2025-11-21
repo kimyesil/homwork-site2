@@ -16,6 +16,10 @@ body {
   justify-content: center;
 }
 
+.file-box {
+  margin-top: 16px;   /* 원하면 20~24로 더 키워도 돼 */
+}
+
 .container {
   width: 100%;
   max-width: 750px;
@@ -87,20 +91,23 @@ h1 {
 /* 댓글 */
 .comment-input-box {
   display: flex;
+  flex-direction: column;  /* ✅ 세로 정렬 */
   gap: 8px;
   margin-top: 15px;
 }
 
+/* 이름은 위에, 폭은 100%, 높이는 기본 인풋 정도 */
 .comment-input-name {
-  width: 120px;
-  padding: 10px;
+  width: 100%;
+  padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #d4d4d8;
   font-size: 14px;
 }
 
+/* 내용 칸은 아래, 높이 그대로 */
 .comment-input-text {
-  flex: 1;
+  width: 100%;
   padding: 10px;
   height: 80px;
   border-radius: 10px;
