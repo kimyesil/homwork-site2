@@ -311,12 +311,21 @@ h1 {
     <h2 style="font-size:18px;">💬 댓글</h2>
     <div id="commentList"></div>
 
-    <div class="comment-input-box">
-      <input id="commentName" class="comment-input-name" placeholder="이름">
-      <textarea id="commentText" class="comment-input-text" placeholder="댓글 내용을 입력하세요"></textarea>
-    </div>
-    <button class="button-main" id="commentBtn">댓글 달기</button>
-  </div>
+  <div class="comment-input-box">
+  <select id="commentName" class="comment-input-name">
+    <option value="">댓글 작성자 선택</option>
+    <option value="김예실M">김예실M</option>
+    <option value="박제민M">박제민M</option>
+    <option value="원장님">원장님</option>
+  </select>
+
+  <textarea id="commentText"
+            class="comment-input-text"
+            placeholder="댓글 내용을 입력하세요"></textarea>
+
+  <button class="button-main" id="commentBtn">댓글 달기</button>
+</div>
+
 
   <div class="back-btn"><a href="index.html">← 목록으로 돌아가기</a></div>
 </div>
