@@ -159,6 +159,24 @@
       color: #ffffff;
       border-color: #4f46e5;
     }
+
+    /* ✅ 페이지네이션 개선(추가) */
+    .page-btn.ghost {
+      background: #f3f4f6;
+      color: #374151;
+      border-color: #e5e7eb;
+    }
+    .page-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .page-dots {
+      display: inline-block;
+      margin: 0 6px;
+      color: #6b7280;
+      font-size: 13px;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -442,19 +460,77 @@
     renderPagination();
   }
 
+  /* ✅ 페이지네이션(교체) */
   function renderPagination() {
     const box = document.getElementById("pagination");
     box.innerHTML = "";
 
     if (!totalPages || totalPages <= 1) return;
 
-    for (let i = 1; i <= totalPages; i++) {
+    const isMobile = window.matchMedia("(max-width: 480px)").matches;
+    const windowSize = isMobile ? 3 : 7;
+
+    const makeBtn = (label, page, opts = {}) => {
+      const { disabled = false, active = false, ghost = false } = opts;
+
       const btn = document.createElement("button");
-      btn.textContent = i;
-      btn.className = "page-btn" + (i === currentPage ? " active" : "");
-      btn.onclick = () => loadPosts(i);
-      box.appendChild(btn);
+      btn.textContent = label;
+      btn.className =
+        "page-btn" +
+        (active ? " active" : "") +
+        (ghost ? " ghost" : "");
+
+      if (disabled) {
+        btn.disabled = true;
+      } else {
+        btn.onclick = () => loadPosts(page);
+      }
+      return btn;
+    };
+
+    const makeDots = () => {
+      const span = document.createElement("span");
+      span.textContent = "…";
+      span.className = "page-dots";
+      return span;
+    };
+
+    const atFirst = currentPage === 1;
+    const atLast = currentPage === totalPages;
+
+    // ⟪ 맨처음, ⟨ 이전
+    box.appendChild(makeBtn("⟪", 1, { disabled: atFirst, ghost: true }));
+    box.appendChild(makeBtn("⟨", currentPage - 1, { disabled: atFirst, ghost: true }));
+
+    // 가운데 윈도우 범위 계산
+    let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+    let end = start + windowSize - 1;
+
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - windowSize + 1);
     }
+
+    // 앞쪽 1 + …
+    if (start > 1) {
+      box.appendChild(makeBtn("1", 1, { active: currentPage === 1 }));
+      if (start > 2) box.appendChild(makeDots());
+    }
+
+    // 실제 페이지들
+    for (let i = start; i <= end; i++) {
+      box.appendChild(makeBtn(String(i), i, { active: i === currentPage }));
+    }
+
+    // 뒤쪽 … + last
+    if (end < totalPages) {
+      if (end < totalPages - 1) box.appendChild(makeDots());
+      box.appendChild(makeBtn(String(totalPages), totalPages, { active: currentPage === totalPages }));
+    }
+
+    // ⟩ 다음, ⟫ 맨끝
+    box.appendChild(makeBtn("⟩", currentPage + 1, { disabled: atLast, ghost: true }));
+    box.appendChild(makeBtn("⟫", totalPages, { disabled: atLast, ghost: true }));
   }
 
   loadPosts(1);
